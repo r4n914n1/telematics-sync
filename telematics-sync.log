@@ -1,0 +1,83 @@
+{"ok":false,"at":"2026-04-05T19:34:13.821Z","durationMs":222,"message":"Firebase syncClients read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:34:43.956Z","durationMs":128,"message":"Firebase syncClients read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:34:48.371Z","durationMs":184,"message":"Firebase telematics read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:35:13.947Z","durationMs":113,"message":"Firebase syncClients read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:35:18.507Z","durationMs":121,"message":"Firebase telematics read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:35:45.404Z","durationMs":1571,"message":"Firebase vehicles read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:35:48.906Z","durationMs":511,"message":"Firebase vehicles read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:36:06.012Z","durationMs":709,"message":"Firebase vehicles read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:36:14.433Z","durationMs":594,"message":"Firebase vehicles read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":false,"at":"2026-04-05T19:36:18.869Z","durationMs":472,"message":"Firebase vehicles read failed (401): {\n  \"error\" : \"Permission denied\"\n}\n"}
+{"ok":true,"at":"2026-04-05T19:36:37.222Z","count":13,"durationMs":1203,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:36:45.044Z","count":13,"durationMs":1195,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:36:51.655Z","count":13,"durationMs":3245,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:02.201Z","count":13,"durationMs":3609,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:07.143Z","count":13,"durationMs":1121,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:15.075Z","count":13,"durationMs":1214,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:21.658Z","count":13,"durationMs":3242,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:33.334Z","count":13,"durationMs":1124,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:37.166Z","count":13,"durationMs":1134,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:45.047Z","count":13,"durationMs":1184,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:37:49.581Z","count":13,"durationMs":1159,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:03.411Z","count":13,"durationMs":1189,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:07.214Z","count":13,"durationMs":1169,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:15.055Z","count":13,"durationMs":1179,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:19.594Z","count":13,"durationMs":1161,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:33.391Z","count":13,"durationMs":1158,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:37.192Z","count":13,"durationMs":1131,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:45.074Z","count":13,"durationMs":1196,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:38:49.604Z","count":13,"durationMs":1160,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:03.406Z","count":13,"durationMs":1161,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:07.258Z","count":13,"durationMs":1192,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:15.093Z","count":13,"durationMs":1201,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:19.649Z","count":13,"durationMs":1197,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:33.447Z","count":13,"durationMs":1198,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:37.198Z","count":13,"durationMs":1129,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:45.083Z","count":13,"durationMs":1190,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:39:51.994Z","count":13,"durationMs":3528,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:04.345Z","count":13,"durationMs":1255,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:07.213Z","count":13,"durationMs":1134,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:15.143Z","count":13,"durationMs":1238,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:19.597Z","count":13,"durationMs":1128,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:35.445Z","count":13,"durationMs":1096,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:37.268Z","count":13,"durationMs":1185,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:45.117Z","count":13,"durationMs":1205,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:40:49.575Z","count":13,"durationMs":1100,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:02.710Z","count":13,"durationMs":1026,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:05.358Z","count":13,"durationMs":999,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:09.602Z","count":13,"durationMs":3516,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:15.072Z","count":13,"durationMs":1154,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:19.576Z","count":13,"durationMs":1100,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:35.418Z","count":13,"durationMs":1055,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:38.272Z","count":13,"durationMs":2181,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:45.166Z","count":13,"durationMs":1240,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:47.859Z","count":13,"durationMs":1039,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:41:49.593Z","count":13,"durationMs":1115,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:05.464Z","count":13,"durationMs":1094,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:07.150Z","count":13,"durationMs":1051,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:15.110Z","count":13,"durationMs":1169,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:19.622Z","count":13,"durationMs":1142,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:35.542Z","count":13,"durationMs":1160,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:37.301Z","count":13,"durationMs":1195,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:45.144Z","count":13,"durationMs":1201,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:42:49.616Z","count":13,"durationMs":1136,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:05.454Z","count":13,"durationMs":1061,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:09.612Z","count":13,"durationMs":3492,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:15.147Z","count":13,"durationMs":1199,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:19.625Z","count":13,"durationMs":1141,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:35.498Z","count":13,"durationMs":1102,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:37.294Z","count":13,"durationMs":1167,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:45.068Z","count":13,"durationMs":1112,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:43:49.708Z","count":13,"durationMs":1221,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:05.578Z","count":13,"durationMs":1176,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:07.290Z","count":13,"durationMs":1161,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:15.203Z","count":13,"durationMs":1238,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:22.129Z","count":13,"durationMs":3631,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:35.597Z","count":13,"durationMs":1189,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:37.309Z","count":13,"durationMs":1176,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:45.153Z","count":13,"durationMs":1178,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:44:49.623Z","count":13,"durationMs":1111,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:45:21.161Z","count":13,"durationMs":1336,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:45:52.301Z","count":13,"durationMs":1130,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:46:07.468Z","count":13,"durationMs":995,"message":"Sync successful"}
+{"ok":true,"at":"2026-04-05T19:46:22.324Z","count":13,"durationMs":1146,"message":"Sync successful"}

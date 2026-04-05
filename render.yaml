@@ -1,0 +1,18 @@
+services:
+  - type: worker
+    name: telematics-sync-worker
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm run sync:render
+    envVars:
+      - key: FIREBASE_DB_URL
+        sync: false
+      - key: REQUIRE_ACTIVE_BROWSER
+        value: "false"
+      - key: SYNC_INTERVAL_MS
+        value: "60000"
+      - key: SYNC_HOUR_START
+        value: "6"
+      - key: SYNC_HOUR_END
+        value: "18"

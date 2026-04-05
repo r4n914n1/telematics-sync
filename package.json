@@ -1,0 +1,16 @@
+{
+  "name": "telematics-sync",
+  "version": "1.0.0",
+  "private": true,
+  "main": "telematics.js",
+  "scripts": {
+    "sync:local": "node telematics.js",
+    "sync:once": "node sync-once.js",
+    "sync:render": "node telematics.js",
+    "start": "node telematics-cloudrun.js"
+  },
+  "dependencies": {
+    "axios": "^1.13.2",
+    "express": "^4.21.2"
+  }
+}

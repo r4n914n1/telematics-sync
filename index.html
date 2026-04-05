@@ -1,0 +1,1584 @@
+TYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSM Karta</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  >
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Login overlay -->
+  <div id="login-overlay" class="login-overlay" aria-modal="true" role="dialog" aria-label="Prijava">
+    <div class="login-card">
+      <div class="login-card-accent"></div>
+      <div class="login-body">
+        <h1 class="login-title">Fleet Map</h1>
+        <p class="login-sub">Prijavite se da nastavite</p>
+        <div class="login-form-group">
+          <label for="login-email" class="login-label">Email</label>
+          <input type="email" id="login-email" class="login-input" placeholder="vas@email.com" autocomplete="email">
+        </div>
+        <div class="login-form-group">
+          <label for="login-password" class="login-label">Lozinka</label>
+          <input type="password" id="login-password" class="login-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <p id="login-error" class="login-error" hidden></p>
+        <button type="button" id="login-btn" class="login-btn">Prijavi se</button>
+      </div>
+    </div>
+  </div>
+  <div class="left-controls" aria-label="Informacije o nedelji i datumima">
+    <div class="date-segment">
+      <label class="seg-btn seg-week" id="week-btn">
+        <span class="btn-label">Nedelja</span>
+        <span class="btn-value" id="week-val"></span>
+        <select id="map-filter-week" class="btn-hidden-week"></select>
+      </label>
+      <button type="button" class="seg-btn" id="date-range-btn" style="min-width:120px">
+        <span class="btn-label">Raspon</span>
+        <span class="btn-value" id="date-range-val"></span>
+      </button>
+      <input type="date" id="map-filter-from" hidden>
+      <input type="date" id="map-filter-to" hidden>
+    </div>
+  </div>
+
+  <div id="pins-list-panel" class="pins-list-panel">
+    <div id="pins-list-content" class="pins-list-content"></div>
+  </div>
+
+  <form id="location-search-form" class="location-search" aria-label="Pretraga lokacije">
+    <input
+      type="search"
+      id="location-search-input"
+      class="location-search-input"
+      placeholder="Pretraži lokaciju (Google stil)..."
+      autocomplete="off"
+      required
+    >
+    <button type="submit" class="location-search-btn">Traži</button>
+    <ul id="location-search-suggestions" class="location-search-suggestions" hidden></ul>
+  </form>
+
+  <button type="button" id="center-map-btn" class="center-map-btn" aria-label="Centriranje mape" title="Prikaži sva vozila">
+    <img src="center.png" alt="Centriranje mape" class="center-map-icon">
+  </button>
+
+  <button type="button" id="telematics-refresh-btn" class="telematics-refresh-btn" title="Ručno osvežavanje podataka">
+    <img src="refresh.png" alt="Osvežavanje" class="telematics-refresh-icon">
+  </button>
+
+  <button id="pins-list-toggle" class="pins-list-toggle" title="Prikaži/sakrij listu pinova">
+    <img src="list.png" alt="Lista pinova" class="pins-list-toggle-icon">
+  </button>
+
+  <button type="button" id="draw-route-btn" class="draw-route-btn" aria-label="Crtanje rute" title="Crtanje rute i kilometraže">
+    <img src="pencil.png" alt="Crtanje rute" class="draw-route-icon">
+  </button>
+
+  <button type="button" class="settings-btn" aria-label="Postavke" title="Postavke">
+    <img src="cog.png" alt="Postavke" class="gear-icon">
+  </button>
+
+  <div id="route-distance-indicator" class="route-distance-indicator" aria-live="polite" hidden>
+    Ruta: 0.00 km
+  </div>
+
+  <dialog id="settings-dialog" class="settings-dialog" aria-label="Settings">
+    <div class="settings-card">
+      <header class="settings-header">
+        <h2>Settings</h2>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button type="button" id="logout-btn" class="logout-btn" title="Odjava">Odjavi se</button>
+          <button type="button" id="settings-close-btn" class="settings-close" aria-label="Zatvori">&times;</button>
+        </div>
+      </header>
+      <div class="settings-body">
+
+        <!-- Sidebar nav -->
+        <nav class="settings-nav">
+          <button type="button" class="settings-nav-btn active" data-panel="vozila">Vozila</button>
+          <button type="button" class="settings-nav-btn" data-panel="markeri">Markeri</button>
+          <button type="button" class="settings-nav-btn" data-panel="notifikacije">Notifikacije</button>
+          <button type="button" class="settings-nav-btn" data-panel="telematika">Telematika</button>
+          <button type="button" class="settings-nav-btn" data-panel="placeholder1">Placeholder 1</button>
+          <button type="button" class="settings-nav-btn" data-panel="placeholder2">Placeholder 2</button>
+        </nav>
+
+        <!-- Content panels -->
+        <div class="settings-panels">
+
+          <!-- Vozila -->
+          <div class="settings-panel active" data-panel="vozila">
+            <h3>Boje vozila</h3>
+            <div class="vehicle-editor-head" aria-hidden="true">
+              <span>Tablica</span>
+              <span>Label</span>
+              <span></span>
+              <span title="Vidljivo na mapi">&#128065;</span>
+            </div>
+            <div id="vehicle-color-list" class="vehicle-editor-list" aria-label="Spisak vozila"></div>
+          </div>
+
+          <!-- Markeri -->
+          <div class="settings-panel" data-panel="markeri">
+            <h3>Oblici pinova</h3>
+            <div id="pin-type-shapes-settings"></div>
+            <h3 style="margin-top:20px">Veličina markera</h3>
+            <div class="marker-size-picker">
+              <button type="button" class="marker-size-btn active" data-scale="1">1×</button>
+              <button type="button" class="marker-size-btn" data-scale="1.1">1.1×</button>
+              <button type="button" class="marker-size-btn" data-scale="1.2">1.2×</button>
+              <button type="button" class="marker-size-btn" data-scale="1.3">1.3×</button>
+              <button type="button" class="marker-size-btn" data-scale="1.4">1.4×</button>
+              <button type="button" class="marker-size-btn" data-scale="1.5">1.5×</button>
+            </div>
+          </div>
+
+          <!-- Notifikacije -->
+          <div class="settings-panel" data-panel="notifikacije">
+            <h3>Upozorenja o blizini</h3>
+            <div class="form-group">
+              <label for="settings-proximity-km">Udaljenost (km)</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="settings-proximity-km" class="form-input" min="1" max="100" step="1" value="3" placeholder="1–100" style="width:72px;flex-shrink:0">
+                <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;white-space:nowrap">
+                  <input type="checkbox" id="settings-proximity-enabled" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+                  Podrazumevano
+                </label>
+                <div class="notif-toggle-group">
+                  <button type="button" class="notif-toggle-btn active" id="prox-sound-btn" title="Zvuk upozorenja">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 7.5h2.5L9 4v12l-3.5-3.5H3z"/>
+                      <path d="M12 7a4 4 0 0 1 0 6"/>
+                      <line class="notif-toggle-slash" x1="2" y1="18" x2="18" y2="2"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="notif-toggle-btn active" id="prox-card-btn" title="Notifikacija na ekranu">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="16" height="12" rx="2"/>
+                      <line x1="5" y1="8" x2="15" y2="8"/>
+                      <line x1="5" y1="11" x2="11" y2="11"/>
+                      <line class="notif-toggle-slash" x1="2" y1="18" x2="18" y2="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                <label style="font-size:12px;color:var(--ink-soft);white-space:nowrap">Trajanje kartice (sek)</label>
+                <input type="number" id="settings-prox-card-sec" class="form-input" min="0" max="60" step="1" value="10" style="width:60px;flex-shrink:0">
+                <span style="font-size:11px;color:var(--ink-muted)">0 = beskonačno</span>
+              </div>
+            </div>
+            <h3 style="margin-top:20px">Tajmer</h3>
+            <div class="form-group">
+              <label for="settings-alarm-min">Trajanje (minuta)</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="settings-alarm-min" class="form-input" min="1" max="540" step="1" value="30" placeholder="1–540" style="width:72px;flex-shrink:0">
+                <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;white-space:nowrap">
+                  <input type="checkbox" id="settings-tajmer-enabled" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
+                  Podrazumevano
+                </label>
+                <div class="notif-toggle-group">
+                  <button type="button" class="notif-toggle-btn active" id="tajmer-sound-btn" title="Zvuk tajmera">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M3 7.5h2.5L9 4v12l-3.5-3.5H3z"/>
+                      <path d="M12 7a4 4 0 0 1 0 6"/>
+                      <line class="notif-toggle-slash" x1="2" y1="18" x2="18" y2="2"/>
+                    </svg>
+                  </button>
+                  <button type="button" class="notif-toggle-btn active" id="tajmer-card-btn" title="Notifikacija na ekranu">
+                    <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="2" y="4" width="16" height="12" rx="2"/>
+                      <line x1="5" y1="8" x2="15" y2="8"/>
+                      <line x1="5" y1="11" x2="11" y2="11"/>
+                      <line class="notif-toggle-slash" x1="2" y1="18" x2="18" y2="2"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                <label style="font-size:12px;color:var(--ink-soft);white-space:nowrap">Trajanje kartice (sek)</label>
+                <input type="number" id="settings-tajmer-card-sec" class="form-input" min="0" max="60" step="1" value="10" style="width:60px;flex-shrink:0">
+                <span style="font-size:11px;color:var(--ink-muted)">0 = beskonačno</span>
+              </div>
+            </div>
+            <h3 style="margin-top:20px">Alarm</h3>
+            <div class="form-group">
+              <label for="settings-stale-min">Bez promene statusa (minuta)</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <input type="number" id="settings-stale-min" class="form-input" min="1" max="1440" step="1" value="60" placeholder="1–1440" style="width:80px;flex-shrink:0">
+                <span style="font-size:11px;color:var(--ink-muted)">Upozorenje kada vozilo stoji na istoj lokaciji bez promene statusa duže od ovog broja minuta</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telematika -->
+          <div class="settings-panel" data-panel="telematika">
+            <h3>Telematika</h3>
+            <form class="telematics-form">
+              <div class="form-group">
+                <label for="telematics-provider">Dobavljač</label>
+                <select id="telematics-provider" class="form-select">
+                  <option value="">Odaberi dobavljača...</option>
+                  <option value="nts">NTS</option>
+                  <option value="provider2">Provider 2</option>
+                  <option value="provider3">Provider 3</option>
+                  <option value="provider4">Provider 4</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="telematics-username">Username</label>
+                <input type="text" id="telematics-username" class="form-input" placeholder="Unesi username">
+              </div>
+              <div class="form-group">
+                <label for="telematics-password">Password</label>
+                <input type="password" id="telematics-password" class="form-input" placeholder="Unesi password">
+              </div>
+              <div class="form-group">
+                <label for="telematics-sync-url">Sync URL (endpoint)</label>
+                <input type="url" id="telematics-sync-url" class="form-input" placeholder="https://tvoj-servis.com">
+              </div>
+              <div class="form-buttons">
+                <button type="button" id="telematics-cancel" class="btn-cancel">Otkaži</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Placeholder 1 -->
+          <div class="settings-panel" data-panel="placeholder1">
+            <h3>Placeholder 1</h3>
+          </div>
+
+          <!-- Placeholder 2 -->
+          <div class="settings-panel" data-panel="placeholder2">
+            <h3>Placeholder 2</h3>
+          </div>
+
+        </div><!-- /.settings-panels -->
+      </div><!-- /.settings-body -->
+      <footer class="settings-footer">
+        <button type="button" id="settings-save-btn" class="btn-save">Sačuvaj</button>
+      </footer>
+    </div><!-- /.settings-card -->
+  </dialog>
+
+  <dialog id="vehicle-palette-dialog" class="vehicle-palette-dialog" aria-label="Izbor boje vozila">
+    <div class="vehicle-palette-card">
+      <header class="vehicle-palette-header">
+        <h3>Izbor boje</h3>
+        <button type="button" id="vehicle-palette-close" class="settings-close" aria-label="Zatvori">&times;</button>
+      </header>
+      <div id="vehicle-color-palette" class="vehicle-color-palette"></div>
+    </div>
+  </dialog>
+
+  <dialog id="date-range-dialog" class="date-range-dialog" aria-label="Raspon datuma">
+    <div class="date-range-card">
+      <div class="login-card-accent"></div>
+      <header class="vehicle-palette-header">
+        <h3>Raspon datuma</h3>
+        <button type="button" id="date-range-close" class="settings-close" aria-label="Zatvori">&times;</button>
+      </header>
+      <div class="date-range-body">
+        <div class="drc-header">
+          <button type="button" class="drc-nav" id="drc-prev">&#8249;</button>
+          <span class="drc-month-label" id="drc-month-label"></span>
+          <button type="button" class="drc-nav" id="drc-next">&#8250;</button>
+        </div>
+        <div class="drc-weekdays">
+          <span>Po</span><span>Ut</span><span>Sr</span><span>Če</span><span>Pe</span><span>Su</span><span>Ne</span>
+        </div>
+        <div class="drc-days" id="drc-days"></div>
+        <p class="drc-hint" id="drc-hint">Odaberite početni datum</p>
+        <button type="button" id="date-range-apply" class="login-btn" style="margin-top:8px" disabled>Primeni</button>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="pins-dialog" class="pins-dialog" aria-label="Pin marker dialog">
+    <div class="pins-dialog-card">
+      <header class="pins-dialog-header">
+        <h3 id="pins-dialog-title">Novi pin</h3>
+        <button type="button" id="pins-dialog-close" class="settings-close" aria-label="Zatvori">&times;</button>
+      </header>
+      <div class="pins-dialog-body">
+        <div class="pins-dialog-cols">
+          <!-- Levo: ostala polja -->
+          <div class="pins-dialog-left">
+            <div class="pins-form-group">
+              <label for="pins-input-label">Label</label>
+              <input type="text" id="pins-input-label" class="form-input" placeholder="Kratki naziv..." maxlength="80" autocomplete="off">
+            </div>
+            <div class="pins-form-group">
+              <label for="pins-input-note">Napomena</label>
+              <textarea id="pins-input-note" class="form-input pins-textarea" placeholder="Slobodan tekst..." maxlength="200" rows="3"></textarea>
+            </div>
+            <div class="pins-date-row">
+              <div class="pins-form-group">
+                <label for="pins-week-select">Nedelja</label>
+                <select id="pins-week-select" class="form-input pins-week-select"></select>
+              </div>
+              <div class="pins-form-group">
+                <label for="pins-input-from">Od</label>
+                <input type="date" id="pins-input-from" class="form-input pins-date-input">
+              </div>
+              <div class="pins-form-group">
+                <label for="pins-input-to">Do</label>
+                <input type="date" id="pins-input-to" class="form-input pins-date-input">
+              </div>
+            </div>
+            <div class="pins-form-group">
+              <label>Vrsta pina</label>
+              <div class="pins-type-picker" id="pins-type-picker">
+                <button type="button" class="pins-type-btn active" data-ptype="utovar">
+                  <span class="pins-type-preview" id="pins-type-prev-utovar"></span>
+                  <span class="pins-type-name">Nalog za utovar</span>
+                </button>
+                <button type="button" class="pins-type-btn" data-ptype="poi">
+                  <span class="pins-type-preview" id="pins-type-prev-poi"></span>
+                  <span class="pins-type-name">Tačka interesovanja</span>
+                </button>
+                <button type="button" class="pins-type-btn" data-ptype="placeholder">
+                  <span class="pins-type-preview" id="pins-type-prev-placeholder"></span>
+                  <span class="pins-type-name">Placeholder</span>
+                </button>
+              </div>
+            </div>
+            <div class="pins-form-group">
+              <label>Opcije</label>
+              <div class="pins-checks">
+                <label class="pins-check-row">
+                  <input type="checkbox" id="pins-check-upozorenje">
+                  <span>Upozorenje o blizini</span>
+                  <input type="number" id="pins-check-upozorenje-km" class="form-input" min="1" max="100" step="1" style="width:58px;padding:4px 6px;font-size:12px;margin-left:4px" title="km" disabled>
+                  <span style="font-size:11px;color:var(--ink-muted)">km</span>
+                </label>
+                <div style="display:flex;gap:8px">
+                  <label class="pins-check-row" style="flex:1">
+                    <input type="checkbox" id="pins-check-tajmer">
+                    <span>Tajmer</span>
+                    <span id="pins-tajmer-extras" style="display:inline-flex;align-items:center;gap:4px">
+                      <input type="number" id="pins-check-tajmer-min" class="form-input" min="1" max="540" step="1" style="width:54px;padding:4px 6px;font-size:12px;margin-left:4px" title="minuta" disabled>
+                      <span style="font-size:11px;color:var(--ink-muted)">min</span>
+                    </span>
+                  </label>
+                  <div class="pins-check-row" style="flex:1;gap:6px;cursor:default" id="pins-alarm-row">
+                    <input type="checkbox" id="pins-check-alarm" style="cursor:pointer;flex-shrink:0">
+                    <label for="pins-check-alarm" style="cursor:pointer;user-select:none;margin:0">Alarm</label>
+                    <div id="pins-alarm-extras" style="display:inline-flex;align-items:center;gap:3px;margin-left:auto">
+                      <select class="alarm-sel" id="pins-alarm-hh"></select>
+                      <span class="alarm-colon">:</span>
+                      <select class="alarm-sel" id="pins-alarm-mm"></select>
+                      <button type="button" class="alarm-clear-btn" id="pins-alarm-clear" title="Obriši">✕</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Desno: izbor vozila -->
+          <div class="pins-dialog-right">
+            <div class="pins-form-group pins-vehicle-col">
+              <label>Vozilo</label>
+              <div id="pins-vehicle-dropdown" class="pins-vehicle-panel"></div>
+            </div>
+          </div>
+        </div>
+        <!-- Skriven trigger — potreban za JS kompatibilnost -->
+        <div style="display:none" aria-hidden="true">
+          <div class="pins-vehicle-picker" id="pins-vehicle-picker">
+            <button type="button" class="pins-vehicle-trigger" id="pins-vehicle-trigger" tabindex="-1">
+              <span class="pins-vehicle-dot" id="pins-vehicle-dot" style="background:#94a3b8"></span>
+              <span class="pins-vehicle-label" id="pins-vehicle-label">— Bez vozila —</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <footer class="pins-dialog-footer">
+        <button type="button" id="pins-btn-save" class="pins-btn pins-btn--primary">Dodaj</button>
+        <button type="button" id="pins-btn-delete" class="pins-btn pins-btn--danger" hidden>Obriši</button>
+      </footer>
+    </div>
+  </dialog>
+
+  <div id="map"></div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+  <script>
+    window.GOOGLE_MAPS_API_KEY = "AIzaSyD-fuXOflfMZDdDolyw5iLNS5Xa-c32bOw";
+  </script>
+  <script src="search.js"></script>
+  <script src="pins.js"></script>
+  <script>
+    const weekBtn = document.getElementById("week-btn");
+    const dateRangeBtn = document.getElementById("date-range-btn");
+    let pinsApi;
+    const centerMapBtn = document.getElementById("center-map-btn");
+    const drawRouteBtn = document.getElementById("draw-route-btn");
+    const routeDistanceIndicator = document.getElementById("route-distance-indicator");
+    const settingsBtn = document.querySelector(".settings-btn");
+    const settingsDialog = document.getElementById("settings-dialog");
+    const settingsCloseBtn = document.getElementById("settings-close-btn");
+    const telematicsSaveBtn = null; // removed — replaced by global settings-save-btn
+    const telematicsCancelBtn = document.getElementById("telematics-cancel");
+    const telematicsProvider = document.getElementById("telematics-provider");
+    const telematicsUsername = document.getElementById("telematics-username");
+    const telematicsPassword = document.getElementById("telematics-password");
+    const telematicsSyncUrl  = document.getElementById("telematics-sync-url");
+
+    // Settings sidebar nav switching
+    settingsDialog.addEventListener("click", e => {
+      const btn = e.target.closest(".settings-nav-btn");
+      if (!btn) return;
+      const panel = btn.dataset.panel;
+      settingsDialog.querySelectorAll(".settings-nav-btn").forEach(b => b.classList.toggle("active", b === btn));
+      settingsDialog.querySelectorAll(".settings-panel").forEach(p => p.classList.toggle("active", p.dataset.panel === panel));
+    });
+
+    // Notification toggle buttons
+    window.notifToggles = {
+      proxSound: true, proxCard: true,
+      tajmerSound: true, tajmerCard: true,
+    };
+    window.notifCardSec = { prox: 10, tajmer: 10 };
+
+    // Called from _appStart() after auth, loads toggles then calls cb()
+    function _loadTogglesFromFirebase(cb) {
+      if (!window.db) { if (cb) cb(); return; }
+      const uid = window.currentUid;
+      const ref = uid ? window.db.ref(`userSettings/${uid}`) : window.db.ref("settings");
+      ref.once("value").then(snap => {
+        const s = snap.val() || {};
+        const nt = s.notifToggles || {};
+        Object.keys(window.notifToggles).forEach(key => {
+          if (typeof nt[key] === "boolean") window.notifToggles[key] = nt[key];
+        });
+        if (typeof s.proxCardSec   === "number") window.notifCardSec.prox   = s.proxCardSec;
+        if (typeof s.tajmerCardSec === "number") window.notifCardSec.tajmer = s.tajmerCardSec;
+        if (typeof s.staleMin      === "number") window.userStaleMin        = s.staleMin;
+        console.log("[Notif] toggles ucitani:", { ...window.notifToggles }, "cardSec:", { ...window.notifCardSec });
+      }).catch(err => {
+        console.warn("[Notif] toggles load error:", err.message);
+      }).finally(() => { if (cb) cb(); });
+    }
+
+    const _notifToggleKeys = {
+      "prox-sound-btn":   "proxSound",
+      "prox-card-btn":    "proxCard",
+      "tajmer-sound-btn": "tajmerSound",
+      "tajmer-card-btn":  "tajmerCard",
+    };
+
+    const _cardSecInputMap = {
+      "proxCard":   "settings-prox-card-sec",
+      "tajmerCard": "settings-tajmer-card-sec",
+    };
+
+    function _applyNotifToggle(key, on) {
+      window.notifToggles[key] = on;
+      const id = Object.keys(_notifToggleKeys).find(k => _notifToggleKeys[k] === key);
+      if (id) { const el = document.getElementById(id); if (el) el.classList.toggle("active", on); }
+      if (_cardSecInputMap[key]) {
+        const inp = document.getElementById(_cardSecInputMap[key]);
+        if (inp) inp.disabled = !on;
+      }
+    }
+
+    Object.entries(_notifToggleKeys).forEach(([id, key]) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener("click", () => {
+        const on = el.classList.toggle("active");
+        window.notifToggles[key] = on;
+        if (_cardSecInputMap[key]) {
+          const inp = document.getElementById(_cardSecInputMap[key]);
+          if (inp) inp.disabled = !on;
+        }
+      });
+    });
+
+    const settingsProximityKm  = document.getElementById("settings-proximity-km");
+    const settingsAlarmMin     = document.getElementById("settings-alarm-min");
+    const settingsProximityEnabled = document.getElementById("settings-proximity-enabled");
+    const settingsTajmerEnabled    = document.getElementById("settings-tajmer-enabled");
+    const settingsProxCardSec      = document.getElementById("settings-prox-card-sec");
+    const settingsTajmerCardSec    = document.getElementById("settings-tajmer-card-sec");
+    const settingsStaleMin         = document.getElementById("settings-stale-min");
+    const settingsSaveBtn          = document.getElementById("settings-save-btn");
+
+    if (settingsSaveBtn) settingsSaveBtn.addEventListener("click", () => {
+      if (!window.db) return;
+      const uid = window.currentUid;
+      if (!uid) { alert("Niste prijavljeni."); return; }
+      const base = `userSettings/${uid}`;
+      const updates = {};
+      // ── Notifikacije (per-user) ──
+      updates[`${base}/proximityEnabled`] = settingsProximityEnabled ? settingsProximityEnabled.checked : true;
+      updates[`${base}/tajmerEnabled`]    = settingsTajmerEnabled    ? settingsTajmerEnabled.checked    : true;
+      if (settingsProximityKm  && settingsProximityKm.value  !== "") updates[`${base}/proximityKm`]  = parseFloat(settingsProximityKm.value);
+      if (settingsAlarmMin     && settingsAlarmMin.value     !== "") updates[`${base}/alarmMin`]     = parseFloat(settingsAlarmMin.value);
+      if (settingsProxCardSec  && settingsProxCardSec.value  !== "") { const v = parseFloat(settingsProxCardSec.value);  updates[`${base}/proxCardSec`]   = v; window.notifCardSec.prox   = v; }
+      if (settingsTajmerCardSec && settingsTajmerCardSec.value !== "") { const v = parseFloat(settingsTajmerCardSec.value); updates[`${base}/tajmerCardSec`] = v; window.notifCardSec.tajmer = v; }
+      updates[`${base}/notifToggles`] = { ...window.notifToggles };
+      // ── Alarm stale (per-user) ──
+      if (settingsStaleMin && settingsStaleMin.value !== "") {
+        const sv = parseFloat(settingsStaleMin.value);
+        updates[`${base}/staleMin`] = sv;
+        window.userStaleMin = sv;
+      }
+      // ── Markeri (per-user) ──
+      updates[`${base}/markerSize`] = window.markerSizeScale || 1;
+      // ── Telematika (shared — only if all required fields are filled) ──
+      const _tp = telematicsProvider?.value;
+      const _tu = telematicsUsername?.value;
+      const _pw = telematicsPassword?.value;
+      const _su = telematicsSyncUrl?.value?.trim();
+      if (_tp && _tu && _pw) {
+        updates["telematics"] = { provider: _tp, username: _tu, password: _pw, syncUrl: _su || "", updatedAt: new Date().toISOString() };
+      } else if (_su) {
+        updates["telematics/syncUrl"] = _su;
+      }
+      window.db.ref().update(updates)
+        .then(() => {
+          settingsSaveBtn.textContent = "Sačuvano ✓";
+          settingsSaveBtn.classList.add("save-success");
+          setTimeout(() => {
+            settingsSaveBtn.textContent = "Sačuvaj";
+            settingsSaveBtn.classList.remove("save-success");
+            settingsDialog.close();
+          }, 500);
+        })
+        .catch(err => { console.error("[Settings] Greška pri čuvanju:", err.message); alert("Greška pri čuvanju: " + err.message); });
+    });
+
+    // Pins list toggle
+    const pinsListToggleBtn = document.getElementById("pins-list-toggle");
+    const pinsListPanel     = document.getElementById("pins-list-panel");
+    if (pinsListToggleBtn && pinsListPanel) {
+      pinsListToggleBtn.addEventListener("click", () => {
+        const collapsed = pinsListPanel.classList.toggle("pli-collapsed");
+        pinsListToggleBtn.classList.toggle("active", !collapsed);
+        if (window.db && window.currentUid) {
+          window.db.ref(`userSettings/${window.currentUid}/lastView/pinsListCollapsed`).set(collapsed).catch(() => {});
+        }
+      });
+      // Start expanded by default; _appStart will override if user had it collapsed
+      pinsListPanel.classList.remove("pli-collapsed");
+      pinsListToggleBtn.classList.add("active");
+    }
+
+    // Telematics manual refresh button
+    const telematicsRefreshBtn = document.getElementById("telematics-refresh-btn");
+    if (telematicsRefreshBtn) {
+      telematicsRefreshBtn.addEventListener("click", async () => {
+        if (telematicsRefreshBtn.classList.contains("loading")) return;
+        if (!window.db) { alert("Firebase nije dostupan."); return; }
+        telematicsRefreshBtn.classList.add("loading");
+        telematicsRefreshBtn.disabled = true;
+        try {
+          await window.db.ref("syncClients/manualSync").set(true);
+          console.log("[Refresh] Zahtjev poslat u Firebase.");
+          _syncToast("Sync pokrenut…", "info");
+        } catch (e) {
+          console.error("[Refresh] Greška:", e.message);
+          _syncToast("Greška: " + e.message, "error");
+        }
+        setTimeout(() => {
+          telematicsRefreshBtn.classList.remove("loading");
+          telematicsRefreshBtn.disabled = false;
+          _syncToast("Sync završen ✓", "ok");
+        }, 5000);
+      });
+    }
+
+    function _syncToast(msg, type) {
+      const existing = document.getElementById("sync-toast");
+      if (existing) existing.remove();
+      const el = document.createElement("div");
+      el.id = "sync-toast";
+      el.textContent = msg;
+      el.className = "sync-toast sync-toast-" + type;
+      document.body.appendChild(el);
+      requestAnimationFrame(() => el.classList.add("visible"));
+      setTimeout(() => {
+        el.classList.remove("visible");
+        setTimeout(() => el.remove(), 400);
+      }, 3000);
+    }
+
+    const vehicleColorList = document.getElementById("vehicle-color-list");
+    const vehicleColorPalette = document.getElementById("vehicle-color-palette");
+    const vehiclePaletteDialog = document.getElementById("vehicle-palette-dialog");
+    const vehiclePaletteCloseBtn = document.getElementById("vehicle-palette-close");
+    let activeColorVehicleId = "";
+    const presetVehicleColors = [
+      // neutralne (siva)
+      "#a3a3a3", "#737373", "#525252",
+      // plava
+      "#7dd3fc", "#38bdf8", "#0ea5e9", "#0284c7", "#0369a1", "#1d4ed8", "#1e3a8a",
+      // cyan / teal
+      "#67e8f9", "#06b6d4", "#0891b2", "#0e7490", "#14b8a6", "#0f766e", "#134e4a",
+      // zelena
+      "#86efac", "#4ade80", "#22c55e", "#16a34a", "#84cc16", "#65a30d", "#14532d",
+      // žuta / amber
+      "#fde047", "#facc15", "#eab308", "#f59e0b", "#d97706", "#b45309", "#78350f",
+      // narandžasta / crvena
+      "#fb923c", "#f97316", "#ea580c", "#ef4444", "#dc2626", "#b91c1c", "#7f1d1d",
+      // roza / fuchsia
+      "#f9a8d4", "#ec4899", "#db2777", "#be185d", "#9d174d", "#f0abfc", "#e879f9",
+      // ljubičasta / indigo / violet
+      "#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#6d28d9", "#6366f1", "#4f46e5",
+    ];
+
+    function getIsoWeekNumber(date) {
+      const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+      const day = utcDate.getUTCDay() || 7;
+      utcDate.setUTCDate(utcDate.getUTCDate() + 4 - day);
+      const yearStart = new Date(Date.UTC(utcDate.getUTCFullYear(), 0, 1));
+      return Math.ceil(((utcDate - yearStart) / 86400000 + 1) / 7);
+    }
+
+    function formatDate(date) {
+      return date.toLocaleDateString("sr-RS", { day: "2-digit", month: "2-digit" });
+    }
+
+    function isoWeekToMondayGlobal(year, week) {
+      const jan4 = new Date(year, 0, 4);
+      const day = jan4.getDay() || 7;
+      const mon = new Date(jan4);
+      mon.setDate(jan4.getDate() - (day - 1) + (week - 1) * 7);
+      return mon;
+    }
+
+    function sundayOfWeek(mondayDate) {
+      const sun = new Date(mondayDate);
+      sun.setDate(mondayDate.getDate() + 6);
+      return sun;
+    }
+
+    function toYMD(d) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${y}-${m}-${day}`;
+    }
+
+    // ── Map filter (top bar) ──────────────────────────────────────────────────
+
+    const mapFilterWeek = document.getElementById("map-filter-week");
+    const mapFilterFrom = document.getElementById("map-filter-from");
+    const mapFilterTo   = document.getElementById("map-filter-to");
+
+    function buildWeekOptions(selectFrom) {
+      const now = new Date();
+      const options = [];
+      for (let w = -8; w <= 16; w++) {
+        const d = new Date(now);
+        d.setDate(now.getDate() + w * 7);
+        const day = d.getDay() || 7;
+        d.setDate(d.getDate() + 4 - day);
+        const y = d.getFullYear();
+        const jan1 = new Date(y, 0, 1);
+        const wk = Math.ceil(((d - jan1) / 86400000 + 1) / 7);
+        const mon = isoWeekToMondayGlobal(y, wk);
+        const sun = sundayOfWeek(mon);
+        const value = `${y}-W${String(wk).padStart(2, "0")}`;
+        function fmtDMY(d) {
+          return String(d.getDate()).padStart(2,"0") + "." + String(d.getMonth()+1).padStart(2,"0") + "." + d.getFullYear();
+        }
+        if (!options.find(o => o.value === value)) {
+          options.push({ value, mon, sun, label: `${String(wk).padStart(2,"0")}\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0${fmtDMY(mon)}\u00a0\u00a0\u00a0\u2013\u00a0\u00a0\u00a0${fmtDMY(sun)}` });
+        }
+      }
+      options.sort((a, b) => a.value.localeCompare(b.value));
+      mapFilterWeek.innerHTML = options.map(o =>
+        `<option value="${o.value}" data-from="${toYMD(o.mon)}" data-to="${toYMD(o.sun)}">${o.label}</option>`
+      ).join("");
+      const sf = selectFrom || mapFilterFrom.value;
+      const match = options.find(o => toYMD(o.mon) === sf)
+        || options.find(o => toYMD(o.mon) <= sf && sf <= toYMD(o.sun));
+      if (match) mapFilterWeek.value = match.value;
+    }
+
+    function syncFilterButtons() {
+      const from = new Date(mapFilterFrom.value + "T00:00:00");
+      const to   = new Date(mapFilterTo.value   + "T00:00:00");
+      const wkFrom = getIsoWeekNumber(from), wkTo = getIsoWeekNumber(to);
+      document.getElementById("week-val").textContent = (wkFrom === wkTo) ? wkFrom : "";
+      document.getElementById("date-range-val").textContent = formatDate(from) + " \u2013 " + formatDate(to);
+      if (pinsApi) pinsApi.setDateFilter(mapFilterFrom.value, mapFilterTo.value);
+    }
+
+    mapFilterWeek.addEventListener("pointerdown", () => {
+      buildWeekOptions(mapFilterFrom.value);
+    });
+
+    mapFilterWeek.addEventListener("change", () => {
+      const sel = mapFilterWeek.options[mapFilterWeek.selectedIndex];
+      mapFilterFrom.value = sel.dataset.from;
+      mapFilterTo.value   = sel.dataset.to;
+      syncFilterButtons();
+      _saveUserView();
+    });
+
+    (function () {
+      const MONTHS = ["Januar","Februar","Mart","April","Maj","Jun","Jul","Avgust","Septembar","Oktobar","Novembar","Decembar"];
+      const dlg        = document.getElementById("date-range-dialog");
+      const closeBtn   = document.getElementById("date-range-close");
+      const applyBtn   = document.getElementById("date-range-apply");
+      const daysEl     = document.getElementById("drc-days");
+      const monthLabel = document.getElementById("drc-month-label");
+      const prevBtn    = document.getElementById("drc-prev");
+      const nextBtn    = document.getElementById("drc-next");
+      const hintEl     = document.getElementById("drc-hint");
+
+      let calYear, calMonth, pickFrom, pickTo, pickStep, hoverDay;
+      const todayYMD = toYMD(new Date());
+
+      function fmtHint(ymd) {
+        const [y, m, d] = ymd.split("-");
+        return `${d}.${m}.${y}`;
+      }
+
+      function renderCal() {
+        monthLabel.textContent = `${MONTHS[calMonth]} ${calYear}`;
+        const dow  = (new Date(calYear, calMonth, 1).getDay() + 6) % 7;
+        const dim  = new Date(calYear, calMonth + 1, 0).getDate();
+        const dipm = new Date(calYear, calMonth, 0).getDate();
+        const cells = 42;
+
+        let dispFrom = pickFrom, dispTo = pickTo;
+        if (pickStep === 1 && hoverDay) {
+          dispFrom = pickFrom <= hoverDay ? pickFrom : hoverDay;
+          dispTo   = pickFrom <= hoverDay ? hoverDay : pickFrom;
+        }
+
+        daysEl.innerHTML = "";
+        for (let i = 0; i < cells; i++) {
+          let ymd, num, other = false;
+          if (i < dow) {
+            num = dipm - dow + i + 1;
+            const pm = calMonth === 0 ? 11 : calMonth - 1;
+            const py = calMonth === 0 ? calYear - 1 : calYear;
+            ymd = toYMD(new Date(py, pm, num)); other = true;
+          } else if (i >= dow + dim) {
+            num = i - dow - dim + 1;
+            const nm = calMonth === 11 ? 0 : calMonth + 1;
+            const ny = calMonth === 11 ? calYear + 1 : calYear;
+            ymd = toYMD(new Date(ny, nm, num)); other = true;
+          } else {
+            num = i - dow + 1;
+            ymd = toYMD(new Date(calYear, calMonth, num));
+          }
+
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "drc-day";
+          btn.dataset.ymd = ymd;
+          btn.textContent = num;
+          if (other) btn.classList.add("drc-other");
+          if (ymd === todayYMD) btn.classList.add("drc-today");
+          if (dispFrom && ymd === dispFrom) btn.classList.add("drc-start");
+          if (dispTo   && ymd === dispTo)   btn.classList.add("drc-end");
+          if (dispFrom && dispTo && ymd > dispFrom && ymd < dispTo) btn.classList.add("drc-range");
+          if (pickStep === 1 && pickFrom) {
+            const diff = Math.round((new Date(ymd + "T00:00:00") - new Date(pickFrom + "T00:00:00")) / 86400000);
+            if (Math.abs(diff) > 31) { btn.classList.add("drc-out-of-range"); btn.disabled = true; }
+          }
+          daysEl.appendChild(btn);
+        }
+      }
+
+      daysEl.addEventListener("mouseover", (e) => {
+        const btn = e.target.closest(".drc-day");
+        if (!btn || pickStep !== 1 || btn.disabled) return;
+        const ymd = btn.dataset.ymd;
+        if (ymd !== hoverDay) { hoverDay = ymd; renderCal(); }
+      });
+
+      daysEl.addEventListener("click", (e) => {
+        const btn = e.target.closest(".drc-day");
+        if (!btn) return;
+        const ymd = btn.dataset.ymd;
+        if (pickStep === 0) {
+          pickFrom = ymd; pickTo = null; pickStep = 1;
+          hintEl.textContent = "Odaberite krajnji datum";
+        } else if (pickStep === 1) {
+          const diff = Math.round((new Date(ymd + "T00:00:00") - new Date(pickFrom + "T00:00:00")) / 86400000);
+          if (Math.abs(diff) > 31) return;
+          pickTo = ymd;
+          if (pickTo < pickFrom) { const t = pickFrom; pickFrom = pickTo; pickTo = t; }
+          pickStep = 2;
+          hintEl.textContent = `${fmtHint(pickFrom)} \u2013 ${fmtHint(pickTo)}`;
+          applyBtn.disabled = false;
+        } else {
+          pickFrom = ymd; pickTo = null; pickStep = 1;
+          hintEl.textContent = "Odaberite krajnji datum";
+          applyBtn.disabled = true;
+        }
+        renderCal();
+      });
+
+      daysEl.addEventListener("mouseleave", () => {
+        if (pickStep === 1) { hoverDay = null; renderCal(); }
+      });
+
+      prevBtn.addEventListener("click", () => {
+        if (--calMonth < 0) { calMonth = 11; calYear--; } renderCal();
+      });
+      nextBtn.addEventListener("click", () => {
+        if (++calMonth > 11) { calMonth = 0; calYear++; } renderCal();
+      });
+
+      dateRangeBtn.addEventListener("click", () => {
+        const from = mapFilterFrom.value, to = mapFilterTo.value;
+        if (from && to) {
+          pickFrom = from; pickTo = to; pickStep = 2;
+          hintEl.textContent = `${fmtHint(from)} \u2013 ${fmtHint(to)}`;
+          applyBtn.disabled = false;
+        } else {
+          pickFrom = null; pickTo = null; pickStep = 0;
+          hintEl.textContent = "Odaberite po\u010detni datum";
+          applyBtn.disabled = true;
+        }
+        const d = from ? new Date(from + "T00:00:00") : new Date();
+        calYear = d.getFullYear(); calMonth = d.getMonth(); hoverDay = null;
+        renderCal();
+        dlg.showModal();
+      });
+
+      closeBtn.addEventListener("click", () => dlg.close());
+      dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+
+      applyBtn.addEventListener("click", () => {
+        if (!pickFrom || !pickTo) return;
+        mapFilterFrom.value = pickFrom;
+        mapFilterTo.value   = pickTo;
+        syncFilterButtons();
+        _saveUserView();
+        dlg.close();
+      });
+    })();
+
+    // ── Init dates ────────────────────────────────────────────────────────────
+
+    const today = new Date();
+    const _day = today.getDay() || 7;
+    const _mon = new Date(today); _mon.setDate(today.getDate() - (_day - 1));
+    const _sun = sundayOfWeek(_mon);
+
+    mapFilterFrom.value = toYMD(_mon);
+    mapFilterTo.value   = toYMD(_sun);
+    syncFilterButtons();  // pinsApi guard inside — safe before map init
+
+    const map = L.map("map").setView([44.7866, 20.4489], 13);
+    window._leafletMap = map;
+    const routeLayer = L.layerGroup().addTo(map);
+    let isRouteDrawMode = false;
+    let isPointerDown = false;
+    let routePoints = [];
+    let routePolyline = null;
+    let lastDrawPoint = null;
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    initLocationSearch(map);
+    window.markerSizeScale = 1;
+    pinsApi = window.pinsApi = initPins(map);
+    pinsApi.setDateFilter(mapFilterFrom.value, mapFilterTo.value);
+
+    document.querySelectorAll('.marker-size-btn').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.marker-size-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        window.markerSizeScale = parseFloat(this.dataset.scale);
+        if (pinsApi) pinsApi.refreshAllPins();
+        if (window.refreshAllVehicleIcons) window.refreshAllVehicleIcons();
+      });
+    });
+
+    settingsBtn.addEventListener("click", () => {
+      console.log("[Settings] Otvaranje. Firebase:", db ? "OK" : "NIJE DOSTUPAN");
+      loadVehicleColorOptions();
+      if (pinsApi) pinsApi.refreshSettings();
+      if (db) {
+        const _uid = window.currentUid;
+        const _sRef = _uid ? db.ref(`userSettings/${_uid}`) : db.ref("settings");
+        _sRef.once("value").then(snap => {
+          const s = snap.val() || {};
+          if (s.proximityKm != null) settingsProximityKm.value = s.proximityKm;
+          if (s.alarmMin    != null) settingsAlarmMin.value    = s.alarmMin;
+          settingsProximityEnabled.checked = s.proximityEnabled !== false;
+          if (settingsTajmerEnabled) settingsTajmerEnabled.checked = s.tajmerEnabled !== false;
+          if (s.proxCardSec   != null && settingsProxCardSec)   settingsProxCardSec.value   = s.proxCardSec;
+          if (s.tajmerCardSec != null && settingsTajmerCardSec) settingsTajmerCardSec.value = s.tajmerCardSec;
+          if (s.staleMin != null && settingsStaleMin) settingsStaleMin.value = s.staleMin;
+          if (s.markerSize != null) {
+            window.markerSizeScale = s.markerSize;
+            document.querySelectorAll('.marker-size-btn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.scale) === s.markerSize));
+            if (pinsApi) pinsApi.refreshAllPins();
+            if (window.refreshAllVehicleIcons) window.refreshAllVehicleIcons();
+          }
+          // Notif toggles
+          const nt = s.notifToggles || {};
+          Object.keys(window.notifToggles).forEach(key => {
+            const on = nt[key] !== false;
+            _applyNotifToggle(key, on);
+          });
+        }).catch(() => {});
+        db.ref("telematics").once("value").then(snap => {
+          const t = snap.val() || {};
+          if (t.provider) telematicsProvider.value = t.provider;
+          if (t.username) telematicsUsername.value = t.username;
+          if (t.password) telematicsPassword.value = t.password;
+          if (telematicsSyncUrl) telematicsSyncUrl.value = t.syncUrl || "";
+        }).catch(() => {});
+      }
+      settingsDialog.showModal();
+    });
+
+    centerMapBtn.addEventListener("click", () => {
+      console.log("[CenterMap] Centriranje mape na sva vozila...");
+      fitAllVehicles(map);
+    });
+
+    function _setRouteDistanceText(distanceMeters, withPreview = false) {
+      const distanceKm = distanceMeters / 1000;
+      const suffix = withPreview ? " (u toku)" : "";
+      routeDistanceIndicator.textContent = `Ruta: ${distanceKm.toFixed(2)} km${suffix}`;
+    }
+
+    function _calculateRouteDistance(points) {
+      if (points.length < 2) {
+        return 0;
+      }
+
+      let total = 0;
+      for (let i = 1; i < points.length; i += 1) {
+        total += map.distance(points[i - 1], points[i]);
+      }
+
+      return total;
+    }
+
+    function _startRouteDrawing() {
+      isRouteDrawMode = true;
+      isPointerDown = false;
+      routePoints = [];
+      routeLayer.clearLayers();
+      routePolyline = null;
+      lastDrawPoint = null;
+      drawRouteBtn.classList.add("active");
+      map.dragging.disable();
+      map.doubleClickZoom.disable();
+      map.scrollWheelZoom.disable();
+      map.touchZoom.disable();
+      map.boxZoom.disable();
+      map.keyboard.disable();
+      map.getContainer().style.cursor = "crosshair";
+      routeDistanceIndicator.hidden = false;
+      routeDistanceIndicator.textContent = "Ruta: drži klik i crtaj po mapi";
+    }
+
+    function _finishRouteDrawing() {
+      isRouteDrawMode = false;
+      isPointerDown = false;
+      routePoints = [];
+      routePolyline = null;
+      lastDrawPoint = null;
+      routeLayer.clearLayers();
+      drawRouteBtn.classList.remove("active");
+      map.dragging.enable();
+      map.doubleClickZoom.enable();
+      map.scrollWheelZoom.enable();
+      map.touchZoom.enable();
+      map.boxZoom.enable();
+      map.keyboard.enable();
+      map.getContainer().style.cursor = "";
+      _setRouteDistanceText(0, false);
+      routeDistanceIndicator.hidden = true;
+    }
+
+    drawRouteBtn.addEventListener("click", () => {
+      if (isRouteDrawMode) {
+        _finishRouteDrawing();
+      } else {
+        _startRouteDrawing();
+      }
+    });
+
+    function _startFreshRoute(point) {
+      routeLayer.clearLayers();
+      routePoints = [point];
+      routePolyline = L.polyline(routePoints, {
+        color: "#22c55e",
+        weight: 4,
+        opacity: 0.95,
+        lineCap: "round",
+        lineJoin: "round"
+      }).addTo(routeLayer);
+      lastDrawPoint = point;
+      _setRouteDistanceText(0, true);
+    }
+
+    map.on("mousedown", (event) => {
+      if (!isRouteDrawMode) {
+        return;
+      }
+
+      const wasPointerDown = isPointerDown;
+      isPointerDown = true;
+      const point = event.latlng;
+
+      if (!routePolyline || !wasPointerDown) {
+        _startFreshRoute(point);
+      } else {
+        const lastPoint = routePoints[routePoints.length - 1];
+        if (!lastPoint || map.distance(lastPoint, point) > 0.5) {
+          routePoints.push(point);
+          routePolyline.setLatLngs(routePoints);
+        }
+        lastDrawPoint = point;
+        _setRouteDistanceText(_calculateRouteDistance(routePoints), true);
+      }
+    });
+
+    map.on("mousemove", (event) => {
+      if (!isRouteDrawMode || !isPointerDown || !routePolyline) {
+        return;
+      }
+
+      const point = event.latlng;
+      if (lastDrawPoint && map.distance(lastDrawPoint, point) < 3) {
+        return;
+      }
+
+      routePoints.push(point);
+      routePolyline.setLatLngs(routePoints);
+      lastDrawPoint = point;
+      _setRouteDistanceText(_calculateRouteDistance(routePoints), true);
+    });
+
+    map.on("mouseup", () => {
+      if (!isRouteDrawMode) {
+        return;
+      }
+
+      isPointerDown = false;
+      _setRouteDistanceText(_calculateRouteDistance(routePoints), false);
+    });
+
+    map.on("mouseout", () => {
+      if (!isRouteDrawMode) {
+        return;
+      }
+
+      isPointerDown = false;
+      _setRouteDistanceText(_calculateRouteDistance(routePoints), false);
+    });
+
+    map.on("touchstart", (event) => {
+      if (!isRouteDrawMode) {
+        return;
+      }
+
+      const wasPointerDown = isPointerDown;
+      isPointerDown = true;
+      const point = event.latlng;
+      if (!point) {
+        return;
+      }
+
+      if (!routePolyline || !wasPointerDown) {
+        _startFreshRoute(point);
+      } else {
+        const lastPoint = routePoints[routePoints.length - 1];
+        if (!lastPoint || map.distance(lastPoint, point) > 0.5) {
+          routePoints.push(point);
+          routePolyline.setLatLngs(routePoints);
+        }
+        lastDrawPoint = point;
+        _setRouteDistanceText(_calculateRouteDistance(routePoints), true);
+      }
+    });
+
+    map.on("touchmove", (event) => {
+      if (!isRouteDrawMode || !isPointerDown || !routePolyline) {
+        return;
+      }
+
+      const point = event.latlng;
+      if (!point) {
+        return;
+      }
+
+      if (lastDrawPoint && map.distance(lastDrawPoint, point) < 3) {
+        return;
+      }
+
+      routePoints.push(point);
+      routePolyline.setLatLngs(routePoints);
+      lastDrawPoint = point;
+      _setRouteDistanceText(_calculateRouteDistance(routePoints), true);
+    });
+
+    map.on("touchend", () => {
+      if (!isRouteDrawMode) {
+        return;
+      }
+
+      isPointerDown = false;
+      _setRouteDistanceText(_calculateRouteDistance(routePoints), false);
+    });
+
+    settingsCloseBtn.addEventListener("click", () => {
+      settingsDialog.close();
+    });
+
+    settingsDialog.addEventListener("click", (event) => {
+      if (event.target === settingsDialog) {
+        settingsDialog.close();
+      }
+    });
+
+    vehiclePaletteCloseBtn.addEventListener("click", () => {
+      closeVehiclePalette();
+    });
+
+    vehiclePaletteDialog.addEventListener("click", (event) => {
+      if (event.target === vehiclePaletteDialog) {
+        closeVehiclePalette();
+      }
+    });
+
+    // Telematika form buttons
+
+    function _labelForVehicle(id, vehicle) {
+      return vehicle.label || vehicle.licenceplate || vehicle.registration || vehicle.name || id;
+    }
+
+    function normalizeHexColor(value) {
+      const input = String(value || "").trim().toLowerCase();
+      if (!input) {
+        return "";
+      }
+
+      if (/^#[0-9a-f]{6}$/.test(input)) {
+        return input;
+      }
+
+      if (/^#[0-9a-f]{3}$/.test(input)) {
+        return `#${input[1]}${input[1]}${input[2]}${input[2]}${input[3]}${input[3]}`;
+      }
+
+      const rgbMatch = input.match(/^rgba?\((\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+      if (rgbMatch) {
+        const r = Math.max(0, Math.min(255, Number(rgbMatch[1]) || 0));
+        const g = Math.max(0, Math.min(255, Number(rgbMatch[2]) || 0));
+        const b = Math.max(0, Math.min(255, Number(rgbMatch[3]) || 0));
+        return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+      }
+
+      return input;
+    }
+
+    function saveVehicleLabel(vehicleId, label) {
+      return db.ref(`vehicles/${vehicleId}/label`).set(label);
+    }
+
+    function saveVehicleColor(vehicleId, color) {
+      return db.ref(`vehicles/${vehicleId}/color`).set(color);
+    }
+
+    function closeVehiclePalette() {
+      vehicleColorPalette.innerHTML = "";
+      activeColorVehicleId = "";
+      if (vehiclePaletteDialog.open) {
+        vehiclePaletteDialog.close();
+      }
+    }
+
+    function openVehiclePalette(vehicleId, currentColor, buttonElement) {
+      activeColorVehicleId = vehicleId;
+      vehicleColorPalette.innerHTML = "";
+      const activeColor = normalizeHexColor(currentColor);
+
+      presetVehicleColors.forEach((color) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.className = "vehicle-color-swatch";
+        swatch.style.background = `linear-gradient(135deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.04) 40%, rgba(0,0,0,0.55) 100%), ${color}`;
+        swatch.title = color;
+        if (activeColor === normalizeHexColor(color)) swatch.classList.add("active");
+        swatch.addEventListener("click", () => {
+          if (!db || !activeColorVehicleId) return;
+          saveVehicleColor(activeColorVehicleId, color).then(() => {
+            buttonElement.style.color = color;
+            buttonElement.dataset.color = normalizeHexColor(color);
+            if (pinsApi) pinsApi.updateVehicleCache(activeColorVehicleId, color, undefined);
+            closeVehiclePalette();
+          }).catch((err) => {
+            console.error("[Settings] Greška pri čuvanju boje:", err.message);
+            alert("Greška pri čuvanju boje: " + err.message);
+          });
+        });
+        vehicleColorPalette.appendChild(swatch);
+      });
+
+      vehiclePaletteDialog.showModal();
+    }
+
+    let vehiclesSettingsRef = null;
+    let vehiclesSettingsListener = null;
+
+    function renderVehicleColorOptions(vehicles) {
+      console.log("[Settings] ✓ Vozila iz Firebase:", vehicles);
+      console.log("[Settings] Broj vozila:", Object.keys(vehicles).length);
+
+      if (Object.keys(vehicles).length === 0) {
+        console.warn("[Settings] ⚠️ Nema vozila u Firebase!");
+        vehicleColorList.innerHTML = "<p style='color:orange; padding: 10px;'>Nema vozila. Pokreni sync.</p>";
+        return;
+      }
+
+      vehicleColorList.innerHTML = "";
+
+      Object.entries(vehicles).forEach(([id, vehicle]) => {
+          const row = document.createElement("div");
+          row.className = "vehicle-editor-row";
+          row.dataset.vehicleId = id;
+
+          const plateInput = document.createElement("input");
+          plateInput.className = "form-input vehicle-plate-input";
+          plateInput.value = vehicle.licenceplate || vehicle.registration || id;
+          plateInput.readOnly = true;
+
+          const labelInput = document.createElement("input");
+          labelInput.className = "form-input vehicle-label-input";
+          labelInput.value = _labelForVehicle(id, vehicle);
+          labelInput.placeholder = "Unesi label";
+
+          labelInput.addEventListener("change", () => {
+            const nextLabel = labelInput.value.trim() || plateInput.value;
+            labelInput.value = nextLabel;
+            saveVehicleLabel(id, nextLabel).then(() => {
+              if (pinsApi) pinsApi.updateVehicleCache(id, undefined, nextLabel);
+            }).catch((err) => {
+              console.error("[Settings] Greška pri čuvanju label:", err.message);
+              alert("Greška pri čuvanju label: " + err.message);
+            });
+          });
+
+          const colorButton = document.createElement("button");
+          colorButton.type = "button";
+          colorButton.className = "vehicle-color-button";
+          colorButton.title = "Promeni boju markera";
+          colorButton.innerHTML = `
+            <svg viewBox="0 0 24 24" aria-hidden="true" class="palette-icon">
+              <path d="M12 2C6.48 2 2 5.92 2 10.75C2 13.95 4.1 16.68 7.08 17.86C7.92 18.19 8.46 19.01 8.34 19.91C8.16 21.25 9.21 22.38 10.56 22.28H12C17.52 22.28 22 18.36 22 13.53C22 7.92 17.52 2 12 2ZM7.5 12.25C6.67 12.25 6 11.58 6 10.75S6.67 9.25 7.5 9.25S9 9.92 9 10.75S8.33 12.25 7.5 12.25ZM11 8.75C10.17 8.75 9.5 8.08 9.5 7.25S10.17 5.75 11 5.75S12.5 6.42 12.5 7.25S11.83 8.75 11 8.75ZM15.5 8.75C14.67 8.75 14 8.08 14 7.25S14.67 5.75 15.5 5.75S17 6.42 17 7.25S16.33 8.75 15.5 8.75ZM17.5 13.25C16.67 13.25 16 12.58 16 11.75S16.67 10.25 17.5 10.25S19 10.92 19 11.75S18.33 13.25 17.5 13.25Z" fill="currentColor" stroke="#000" stroke-width="0.4" stroke-linejoin="round"/>
+            </svg>
+          `;
+          colorButton.style.color = vehicle.color || "#0ea5e9";
+          colorButton.dataset.color = normalizeHexColor(vehicle.color || "#0ea5e9");
+
+          colorButton.addEventListener("click", () => {
+            const nextColor = colorButton.dataset.color || vehicle.color || colorButton.style.color || "#0ea5e9";
+            openVehiclePalette(id, nextColor, colorButton);
+          });
+
+          row.appendChild(plateInput);
+          row.appendChild(labelInput);
+          row.appendChild(colorButton);
+
+          // Visibility toggle
+          const visBtn = document.createElement("button");
+          visBtn.type = "button";
+          visBtn.className = "vehicle-vis-btn" + (vehicle.hidden ? "" : " active");
+          visBtn.title = vehicle.hidden ? "Prikaži na mapi" : "Sakrij sa mape";
+          visBtn.innerHTML = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+            <ellipse cx="10" cy="10" rx="8" ry="5"/>
+            <circle cx="10" cy="10" r="2.2" fill="currentColor" stroke="none"/>
+            <line class="vis-btn-slash" x1="3" y1="17" x2="17" y2="3"/>
+          </svg>`;
+          visBtn.addEventListener("click", () => {
+            const nowHidden = window.toggleVehicleVisibility ? window.toggleVehicleVisibility(id) : false;
+            visBtn.classList.toggle("active", !nowHidden);
+            visBtn.title = nowHidden ? "Prikaži na mapi" : "Sakrij sa mape";
+            if (db) db.ref(`vehicles/${id}/hidden`).set(nowHidden).catch(() => {});
+          });
+          row.appendChild(visBtn);
+
+          vehicleColorList.appendChild(row);
+        });
+
+      console.log("[Settings] ✅ Real-time osveženo. Ukupno vozila:", vehicleColorList.children.length);
+    }
+
+    function stopVehicleColorOptionsListener() {
+      if (vehiclesSettingsRef && vehiclesSettingsListener) {
+        vehiclesSettingsRef.off("value", vehiclesSettingsListener);
+      }
+
+      vehiclesSettingsRef = null;
+      vehiclesSettingsListener = null;
+    }
+
+    function loadVehicleColorOptions() {
+      console.log("[Settings] Učitavanje vozila (real-time)...");
+      if (!db) {
+        console.warn("[Settings] ❌ Firebase nije inicijalizovan!");
+        vehicleColorList.innerHTML = "<p style='color:red;'>Firebase nije dostupan</p>";
+        return;
+      }
+
+      stopVehicleColorOptionsListener();
+      vehiclesSettingsRef = db.ref("vehicles");
+
+      vehiclesSettingsListener = (snapshot) => {
+        const vehicles = snapshot.val() || {};
+        renderVehicleColorOptions(vehicles);
+      };
+
+      vehiclesSettingsRef.on("value", vehiclesSettingsListener, (err) => {
+        console.error("[Settings] ❌ Greška pri učitavanju vozila:", err.message);
+        vehicleColorList.innerHTML = `<p style='color:red; padding: 10px;'>Greška: ${err.message}</p>`;
+      });
+    }
+
+    settingsDialog.addEventListener("close", () => {
+      closeVehiclePalette();
+      stopVehicleColorOptionsListener();
+    });
+
+    telematicsCancelBtn.addEventListener("click", () => {
+      telematicsUsername.value = "";
+      telematicsPassword.value = "";
+      console.log("[Telematics] Polja su obrisana.");
+    });
+  </script>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <!-- Auth -->
+  <script>
+    (function () {
+      const overlay   = document.getElementById("login-overlay");
+      const emailEl   = document.getElementById("login-email");
+      const passEl    = document.getElementById("login-password");
+      const loginBtn  = document.getElementById("login-btn");
+      const errorEl   = document.getElementById("login-error");
+      const logoutBtn = document.getElementById("logout-btn");
+
+      function showOverlay() {
+        overlay.style.display = "flex";
+        setTimeout(() => overlay.classList.add("visible"), 10);
+      }
+
+      function hideOverlay() {
+        overlay.classList.remove("visible");
+        setTimeout(() => { overlay.style.display = "none"; }, 280);
+      }
+
+      function setLoading(on) {
+        loginBtn.disabled = on;
+        loginBtn.textContent = on ? "Prijavljivanje..." : "Prijavi se";
+      }
+
+      if (!auth) {
+        // Firebase nije konfigurisan — sakrij overlay
+        overlay.style.display = "none";
+        return;
+      }
+
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          hideOverlay();
+          if (logoutBtn) logoutBtn.dataset.email = user.email || "";
+          console.info("[Auth] Prijavljen:", user.email);
+        } else {
+          showOverlay();
+          emailEl.value = "";
+          passEl.value  = "";
+          errorEl.hidden = true;
+        }
+      });
+
+      loginBtn.addEventListener("click", async () => {
+        const email = emailEl.value.trim();
+        const pass  = passEl.value;
+        if (!email || !pass) { errorEl.textContent = "Unesite email i lozinku."; errorEl.hidden = false; return; }
+        setLoading(true);
+        errorEl.hidden = true;
+        try {
+          await auth.signInWithEmailAndPassword(email, pass);
+        } catch (err) {
+          const msgs = {
+            "auth/user-not-found":  "Korisnik nije pronađen.",
+            "auth/wrong-password":  "Pogrešna lozinka.",
+            "auth/invalid-email":   "Neispravan email.",
+            "auth/too-many-requests": "Previše pokušaja. Pokušajte kasnije.",
+            "auth/invalid-credential": "Pogrešan email ili lozinka."
+          };
+          errorEl.textContent = msgs[err.code] || "Greška pri prijavi.";
+          errorEl.hidden = false;
+          setLoading(false);
+        }
+      });
+
+      passEl.addEventListener("keydown", (e) => { if (e.key === "Enter") loginBtn.click(); });
+      emailEl.addEventListener("keydown", (e) => { if (e.key === "Enter") passEl.focus(); });
+
+      if (logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+          const dlg = document.getElementById("settings-dialog");
+          if (dlg && dlg.open) dlg.close();
+          auth.signOut().catch(() => {});
+        });
+      }
+    })();
+  </script>
+
+  <script>
+    if (db) {
+      const browserClientId = `browser-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const presenceRef = db.ref(`syncClients/${browserClientId}`);
+      const heartbeatMs = 20000;
+
+      function writePresence() {
+        presenceRef.update({
+          lastSeen: new Date().toISOString(),
+          page: window.location.pathname || "/",
+          userAgent: navigator.userAgent
+        }).catch((err) => {
+          console.warn("[Telematics] Presence heartbeat greška:", err.message);
+        });
+      }
+
+      function clearPresence() {
+        presenceRef.remove().catch(() => {});
+      }
+
+      writePresence();
+      const heartbeatId = window.setInterval(writePresence, heartbeatMs);
+
+      window.addEventListener("beforeunload", () => {
+        window.clearInterval(heartbeatId);
+        clearPresence();
+      });
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          writePresence();
+        }
+      });
+    }
+  </script>
+
+  <script src="vehicle.js"></script>
+  <script src="notification.js"></script>
+  <script>
+    // Runs once after login: if user has no personal settings, copies defaults from settings/ into userSettings/{uid}/
+    function _initUserSettings(cb) {
+      if (!window.db || !window.currentUid) { cb(); return; }
+      const uid = window.currentUid;
+      window.db.ref(`userSettings/${uid}`).once("value").then(snap => {
+        if (snap.val() !== null) { return; } // already has personal settings
+        return window.db.ref("settings").once("value").then(defSnap => {
+          const def = defSnap.val() || {};
+          const toWrite = {};
+          ["notifToggles","proxCardSec","tajmerCardSec","proximityEnabled","tajmerEnabled","proximityKm","alarmMin","markerSize","staleMin"]
+            .forEach(k => { if (def[k] !== undefined) toWrite[k] = def[k]; });
+          if (Object.keys(toWrite).length === 0) return;
+          return window.db.ref(`userSettings/${uid}`).set(toWrite);
+        });
+      }).catch(err => {
+        console.warn("[Settings] Inicijalizacija licnih podesavanja:", err.message);
+      }).finally(() => cb());
+    }
+
+    // Debounced save of map view + date filter to userSettings/{uid}/
+    let _saveViewTimer = null;
+    function _saveUserView() {
+      if (!window.db || !window.currentUid) return;
+      clearTimeout(_saveViewTimer);
+      _saveViewTimer = setTimeout(() => {
+        const c = map.getCenter();
+        window.db.ref(`userSettings/${window.currentUid}/lastView`).set({
+          lat: c.lat, lng: c.lng, zoom: map.getZoom(),
+          dateFrom: mapFilterFrom.value, dateTo: mapFilterTo.value
+        }).catch(() => {});
+      }, 1000);
+    }
+
+    map.on("moveend zoomend", _saveUserView);
+
+    function _appStart() {
+      addVehicles(map);
+      if (pinsApi) {
+        pinsApi.loadPinTypeShapes();
+        pinsApi.loadPins();
+      }
+      // Restore last view (map position + date filter) then load toggles
+      const _uid = window.currentUid;
+      const _restoreView = _uid
+        ? window.db.ref(`userSettings/${_uid}/lastView`).once("value").then(snap => {
+            const v = snap.val();
+            if (!v) return;
+            if (v.lat != null && v.lng != null && v.zoom != null) {
+              map.off("moveend zoomend", _saveUserView);
+              map.setView([v.lat, v.lng], v.zoom, { animate: false });
+              map.on("moveend zoomend", _saveUserView);
+            }
+            if (v.dateFrom && v.dateTo) {
+              mapFilterFrom.value = v.dateFrom;
+              mapFilterTo.value   = v.dateTo;
+              syncFilterButtons();
+              buildWeekOptions(v.dateFrom);
+            }
+            if (v.pinsListCollapsed === true && pinsListPanel && pinsListToggleBtn) {
+              pinsListPanel.classList.add("pli-collapsed");
+              pinsListToggleBtn.classList.remove("active");
+            }
+          }).catch(() => {})
+        : Promise.resolve();
+
+      _restoreView.finally(() => {
+        _loadTogglesFromFirebase(() => {
+          if (notificationApi) notificationApi.start();
+        });
+      });
+    }
+
+    if (auth) {
+      let _started = false;
+      auth.onAuthStateChanged((user) => {
+        if (user && !_started) {
+          _started = true;
+          window.currentUid = user.uid;
+          _initUserSettings(() => _appStart());
+        }
+      });
+    } else {
+      _appStart();
+    }
+  </script>
+</body>
+</html>
