@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: free
     buildCommand: npm install
-    startCommand: npm run sync:render
+    startCommand: node telematics.js
     envVars:
       - key: FIREBASE_DB_URL
         sync: false
