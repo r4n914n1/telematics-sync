@@ -67,25 +67,24 @@ TYPE html>
     <ul id="location-search-suggestions" class="location-search-suggestions" hidden></ul>
   </form>
 
-  <button type="button" id="center-map-btn" class="center-map-btn" aria-label="Centriranje mape" title="Prikaži sva vozila">
-    <img src="center.png" alt="Centriranje mape" class="center-map-icon">
-  </button>
 
-  <button type="button" id="telematics-refresh-btn" class="telematics-refresh-btn" title="Ručno osvežavanje podataka">
-    <img src="refresh.png" alt="Osvežavanje" class="telematics-refresh-icon">
-  </button>
-
-  <button id="pins-list-toggle" class="pins-list-toggle" title="Prikaži/sakrij listu pinova">
-    <img src="list.png" alt="Lista pinova" class="pins-list-toggle-icon">
-  </button>
-
-  <button type="button" id="draw-route-btn" class="draw-route-btn" aria-label="Crtanje rute" title="Crtanje rute i kilometraže">
-    <img src="pencil.png" alt="Crtanje rute" class="draw-route-icon">
-  </button>
-
-  <button type="button" class="settings-btn" aria-label="Postavke" title="Postavke">
-    <img src="cog.png" alt="Postavke" class="gear-icon">
-  </button>
+  <div class="topbar-btns">
+    <button type="button" id="telematics-refresh-btn" class="telematics-refresh-btn" title="Ručno osvežavanje podataka">
+      <img src="refresh.png" alt="Osvežavanje" class="telematics-refresh-icon">
+    </button>
+    <button id="pins-list-toggle" class="pins-list-toggle" title="Prikaži/sakrij listu pinova">
+      <img src="list.png" alt="Lista pinova" class="pins-list-toggle-icon">
+    </button>
+    <button type="button" id="draw-route-btn" class="draw-route-btn" aria-label="Crtanje rute" title="Crtanje rute i kilometraže">
+      <img src="pencil.png" alt="Crtanje rute" class="draw-route-icon">
+    </button>
+    <button type="button" id="center-map-btn" class="center-map-btn" aria-label="Centriranje mape" title="Prikaži sva vozila">
+      <img src="center.png" alt="Centriranje mape" class="center-map-icon">
+    </button>
+    <button type="button" class="settings-btn" aria-label="Postavke" title="Postavke">
+      <img src="cog.png" alt="Postavke" class="gear-icon">
+    </button>
+  </div>
 
   <div id="route-distance-indicator" class="route-distance-indicator" aria-live="polite" hidden>
     Ruta: 0.00 km
@@ -581,13 +580,19 @@ TYPE html>
 
     // Telematics manual refresh button
     const telematicsRefreshBtn = document.getElementById("telematics-refresh-btn");
+    let telematicsRefreshAlertPausedUntil = 0;
     function updateTelematicsRefreshActive() {
       const now = new Date();
-      const gmtHour = now.getUTCHours();
-      if (gmtHour >= 6 && gmtHour < 18) {
-        telematicsRefreshBtn.classList.add("telematics-refresh-active");
+      const localHour = now.getHours();
+      const nowTs = Date.now();
+      if (localHour < 6 || localHour >= 18) {
+        if (nowTs >= telematicsRefreshAlertPausedUntil) {
+          telematicsRefreshBtn.classList.add("telematics-refresh-alert");
+        } else {
+          telematicsRefreshBtn.classList.remove("telematics-refresh-alert");
+        }
       } else {
-        telematicsRefreshBtn.classList.remove("telematics-refresh-active");
+        telematicsRefreshBtn.classList.remove("telematics-refresh-alert");
       }
     }
     if (telematicsRefreshBtn) {
@@ -596,6 +601,9 @@ TYPE html>
         if (!window.db) { alert("Firebase nije dostupan."); return; }
         telematicsRefreshBtn.classList.add("loading");
         telematicsRefreshBtn.disabled = true;
+        // Pauziraj alert na 3 minuta
+        telematicsRefreshAlertPausedUntil = Date.now() + 3 * 60 * 1000;
+        telematicsRefreshBtn.classList.remove("telematics-refresh-alert");
         try {
           await window.db.ref("syncClients/manualSync").set(true);
           console.log("[Refresh] Zahtjev poslat u Firebase.");

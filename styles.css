@@ -1,3 +1,65 @@
+/* ── Topbar dugmići kontejner ─────────────────────────────────────────────── */
+.topbar-btns {
+  position: fixed;
+  top: 0;
+  right: 12px;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  z-index: 1000;
+  height: var(--topbar-h);
+  align-items: center;
+}
+
+/* Ukloni stare specifične pozicije za dugmad (za backward compatibility) */
+.telematics-refresh-btn[style],
+.pins-list-toggle[style],
+.draw-route-btn[style],
+.center-map-btn[style],
+.settings-btn[style] {
+  position: static !important;
+  right: unset !important;
+  top: unset !important;
+  z-index: unset !important;
+}
+
+/* Ukloni position: fixed i right/top iz pojedinačnih dugmića (oslanjamo se na .topbar-btns) */
+.telematics-refresh-btn,
+.pins-list-toggle,
+.draw-route-btn,
+.center-map-btn,
+.settings-btn {
+  position: static !important;
+  right: unset !important;
+  top: unset !important;
+  z-index: unset !important;
+  height: var(--topbar-h);
+  width: var(--topbar-h);
+  border: 1px solid var(--topbar-border);
+  background: var(--topbar-glass);
+  backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.80);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background 0.18s, border-color 0.18s, color 0.18s;
+}
+
+.telematics-refresh-btn.telematics-refresh-alert {
+  border-color: var(--danger);
+  background: rgba(229,62,62,0.13);
+  box-shadow: 0 0 0 3px var(--danger-border), 0 0 16px 2px var(--danger);
+  color: #fff;
+  animation: telematics-alert-glow 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes telematics-alert-glow {
+  from { box-shadow: 0 0 0 3px var(--danger-border), 0 0 8px 2px var(--danger); }
+  to   { box-shadow: 0 0 0 3px var(--danger-border), 0 0 24px 6px var(--danger); }
+}
 .telematics-refresh-active {
   box-shadow: 0 0 0 3px var(--accent-ring), 0 0 12px 2px var(--accent);
   border-color: var(--accent);
