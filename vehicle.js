@@ -189,7 +189,12 @@ function _formatDateTime(value) {
     return "-";
   }
 
-  const normalized = raw.replace(" ", "T");
+
+  // Ako je format 'YYYY-MM-DD HH:mm:ss' bez vremenske zone, dodaj 'Z' (UTC)
+  let normalized = raw.replace(" ", "T");
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(normalized)) {
+    normalized += "Z";
+  }
   let date = new Date(normalized);
 
   if (!Number.isFinite(date.getTime()) && /^\d+$/.test(raw)) {
@@ -202,14 +207,15 @@ function _formatDateTime(value) {
     return raw;
   }
 
-  const dd = String(date.getDate()).padStart(2, "0");
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const yyyy = date.getFullYear();
-  const hh = String(date.getHours()).padStart(2, "0");
-  const min = String(date.getMinutes()).padStart(2, "0");
-  const ss = String(date.getSeconds()).padStart(2, "0");
-
-  return `${dd}.${mm}.${yyyy} ${hh}:${min}:${ss}`;
+  // Prikaz u lokalnom vremenu korisnika
+  return date.toLocaleString("sr-RS", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  });
 }
 
 function _buildTooltip(v) {

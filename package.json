@@ -4,6 +4,7 @@
   "private": true,
   "main": "telematics.js",
   "scripts": {
+    "start": "node telematics.js",
     "sync:local": "node telematics.js",
     "sync:once": "node sync-once.js",
     "sync:render": "node telematics.js"

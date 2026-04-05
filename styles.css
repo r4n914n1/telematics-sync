@@ -1,3 +1,9 @@
+.telematics-refresh-active {
+  box-shadow: 0 0 0 3px var(--accent-ring), 0 0 12px 2px var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: #fff;
+}
 :root {
   --topbar-h: 44px;
 
@@ -177,7 +183,7 @@ dialog, .notif-card {
 }
 @keyframes telematics-spin {
   from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
+  to   { transform: rotate(-360deg); }
 }
 .telematics-refresh-btn.loading .telematics-refresh-icon {
   animation: telematics-spin 0.8s linear infinite;

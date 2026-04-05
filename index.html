@@ -581,6 +581,15 @@ TYPE html>
 
     // Telematics manual refresh button
     const telematicsRefreshBtn = document.getElementById("telematics-refresh-btn");
+    function updateTelematicsRefreshActive() {
+      const now = new Date();
+      const gmtHour = now.getUTCHours();
+      if (gmtHour >= 6 && gmtHour < 18) {
+        telematicsRefreshBtn.classList.add("telematics-refresh-active");
+      } else {
+        telematicsRefreshBtn.classList.remove("telematics-refresh-active");
+      }
+    }
     if (telematicsRefreshBtn) {
       telematicsRefreshBtn.addEventListener("click", async () => {
         if (telematicsRefreshBtn.classList.contains("loading")) return;
@@ -601,6 +610,8 @@ TYPE html>
           _syncToast("Sync završen ✓", "ok");
         }, 5000);
       });
+      updateTelematicsRefreshActive();
+      setInterval(updateTelematicsRefreshActive, 60 * 1000);
     }
 
     function _syncToast(msg, type) {
