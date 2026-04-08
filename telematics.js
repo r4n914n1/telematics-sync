@@ -494,7 +494,8 @@ const SYNC_HOUR_START = Number(process.env.SYNC_HOUR_START || 6);
 const SYNC_HOUR_END   = Number(process.env.SYNC_HOUR_END   || 18);
 
 function isWithinSyncWindow() {
-  const h = new Date().getHours();
+  // UTC+1 (Central European Time, bez letnjeg računanja)
+  const h = (new Date().getUTCHours() + 1) % 24;
   return h >= SYNC_HOUR_START && h < SYNC_HOUR_END;
 }
 
