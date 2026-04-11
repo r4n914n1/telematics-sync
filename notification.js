@@ -320,23 +320,23 @@
     const now = Date.now();
 
     Object.values(_pinsCache).forEach(pin => {
-      if (!pin.tajmer || !pin.createdAt || !pin.tajmermin) return;
+      if (!pin.tajmer || !pin.tajmerStart || !pin.tajmermin) return;
       if (pin.tipHidden === true) return;
       const minutes = Number(pin.tajmermin);
       if (!minutes) return;
-      const created = new Date(pin.createdAt).getTime();
-      if (isNaN(created)) return;
+      const tajmerStart = new Date(pin.tajmerStart).getTime();
+      if (isNaN(tajmerStart)) return;
 
-      const expiresAt = created + minutes * 60_000;
-      const key = `${pin.id}:${pin.createdAt}:${minutes}`;
+      const expiresAt = tajmerStart + minutes * 60_000;
+      const key = `${pin.id}:${pin.tajmerStart}:${minutes}`;
 
-      if (now >= expiresAt && !_firedTajmer.has(key)) {
+      if (now >= expiresAt && now - expiresAt <= 60_000 && !_firedTajmer.has(key)) {
         _firedTajmer.add(key);
         const pLbl = (pin.label || "").trim();
         const body = pLbl
           ? `Tajmer za lokaciju ${pLbl} je istekao`
           : `Tajmer je istekao`;
-        const remaining = Math.round((expiresAt - created) / 60_000);
+        const remaining = Math.round((expiresAt - tajmerStart) / 60_000);
         const _t = global.notifToggles || {};
         console.group(`%c🟠 TAJMER  pin: ${pin.id}  (${pLbl || "bez naziva"})  postavljeno: ${remaining} min`, "color:#fb923c;font-weight:bold");
         console.log("isteklo:", new Date(expiresAt).toLocaleTimeString());

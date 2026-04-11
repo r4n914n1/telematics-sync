@@ -38,40 +38,7 @@
     let defaultProximityEnabled  = true;
     let defaultTajmerEnabled     = true;
 
-    // ── Alarm time picker ───────────────────────────────────────────────
-    (function() {
-      const selHh    = document.getElementById("pins-alarm-hh");
-      const selMm    = document.getElementById("pins-alarm-mm");
-      const clearBtn = document.getElementById("pins-alarm-clear");
-      if (!selHh || !selMm) return;
-      const eH = document.createElement("option"); eH.value = ""; eH.textContent = "--"; selHh.appendChild(eH);
-      for (let i = 0; i < 24; i++) { const o = document.createElement("option"); o.value = i; o.textContent = String(i).padStart(2,"0"); selHh.appendChild(o); }
-      const eM = document.createElement("option"); eM.value = ""; eM.textContent = "--"; selMm.appendChild(eM);
-      for (let i = 0; i < 60; i++) { const o = document.createElement("option"); o.value = i; o.textContent = String(i).padStart(2,"0"); selMm.appendChild(o); }
-      if (clearBtn) clearBtn.addEventListener("click", e => { e.stopPropagation(); selHh.value = ""; selMm.value = ""; });
-      // start disabled until checkbox is ticked
-      selHh.disabled = true; selMm.disabled = true; if (clearBtn) clearBtn.disabled = true;
-    })();
-
-    function getAlarmTime() {
-      const selHh = document.getElementById("pins-alarm-hh");
-      const selMm = document.getElementById("pins-alarm-mm");
-      if (!selHh || !selMm || selHh.value === "" || selMm.value === "") return "";
-      return String(selHh.value).padStart(2,"0") + ":" + String(selMm.value).padStart(2,"0");
-    }
-
-    function setAlarmTime(val) {
-      const selHh = document.getElementById("pins-alarm-hh");
-      const selMm = document.getElementById("pins-alarm-mm");
-      if (!selHh || !selMm) return;
-      if (!val) { selHh.value = ""; selMm.value = ""; }
-      else {
-        const [h, m] = val.split(":");
-        selHh.value = parseInt(h, 10);
-        selMm.value = parseInt(m, 10);
-      }
-    }
-    // ── End alarm time picker ───────────────────────────────────────────────
+    // (Alarm time picker uklonjen)
 
     // ── Checkbox visibility toggles ──────────────────────────────────────────
     const _tajmerExtras = document.getElementById("pins-tajmer-extras");
@@ -82,25 +49,24 @@
       inputUpozorjenjeKm.disabled = !checked;
       inputUpozorjenjeKm.value = checked ? (inputUpozorjenjeKm.value || defaultProximityKm) : "";
     }
-    function _syncTajmerVis() {
+    function _syncTajmerVis(forceDefault) {
       if (!inputTajmerMin) return;
       const checked = !!inputTajmer?.checked;
       inputTajmerMin.disabled = !checked;
-      inputTajmerMin.value = checked ? (inputTajmerMin.value || defaultTajmerMin) : "";
+      // Always use the latest defaultTajmerMin from settings if checked
+      if (checked) {
+        if (forceDefault || !inputTajmerMin.value || Number(inputTajmerMin.value) === _syncTajmerVis._lastDefault) {
+          inputTajmerMin.value = defaultTajmerMin;
+        }
+      } else {
+        inputTajmerMin.value = "";
+      }
+      _syncTajmerVis._lastDefault = defaultTajmerMin;
     }
-    function _syncAlarmVis() {
-      const checked = !!inputAlarm?.checked;
-      const selHh = document.getElementById("pins-alarm-hh");
-      const selMm = document.getElementById("pins-alarm-mm");
-      const clearBtn = document.getElementById("pins-alarm-clear");
-      if (selHh) selHh.disabled = !checked;
-      if (selMm) selMm.disabled = !checked;
-      if (clearBtn) clearBtn.disabled = !checked;
-      if (!checked) setAlarmTime("");
-    }
+    // (Alarm UI sync uklonjen)
     if (inputUpozorenje) inputUpozorenje.addEventListener("change", _syncUpozorenjeVis);
-    if (inputTajmer) inputTajmer.addEventListener("change", _syncTajmerVis);
-    if (inputAlarm)  inputAlarm.addEventListener("change",  _syncAlarmVis);
+    if (inputTajmer) inputTajmer.addEventListener("change", () => _syncTajmerVis(true));
+    // (Alarm event listener uklonjen)
     // ── End checkbox visibility toggles ─────────────────────────────────────
 
     function isPinInRange(data) {
@@ -140,7 +106,7 @@
     const PIN_TYPES = Object.freeze([
       { key: "utovar",      label: "Nalog za utovar" },
       { key: "poi",         label: "Tačka interesovanja" },
-      { key: "placeholder", label: "Placeholder" }
+      { key: "placeholder", label: "Stop" }
     ]);
     const DEFAULT_TYPE_SHAPES = { utovar: "square", poi: "circle", placeholder: "diamond" };
     let pinTypeShapes = { ...DEFAULT_TYPE_SHAPES };
@@ -221,6 +187,21 @@
       if (z <= 8) return 1;
       if (z <= 12) return 2;
       return 3;
+    }
+
+    // Mapping from marker scale to pin list scale
+    function markerScaleToPinListScale(markerScale) {
+      // Accepts numbers like 1, 1.1, ..., 1.5
+      const mapping = {
+        1: 1,
+        1.1: 1.05,
+        1.2: 1.1,
+        1.3: 1.15,
+        1.4: 1.2,
+        1.5: 1.25
+      };
+      // Use string keys for exact match, fallback to 1
+      return mapping[String(markerScale)] || 1;
     }
 
     function createPinIcon(shape, color, label) {
@@ -419,6 +400,20 @@
       }
       initSettingsSection();
       refreshTypePicker(selectedPinType, selectedColor);
+      // Update tajmer min input if present
+      if (typeof _syncTajmerVis === "function") _syncTajmerVis(true);
+        // Ensure tajmer min input uses latest default when opening dialog
+        function openAddDialog(latlng) {
+          // ...existing code...
+          if (inputTajmer) inputTajmer.checked = false;
+          if (typeof _syncTajmerVis === "function") _syncTajmerVis(true);
+          // ...existing code...
+        }
+        function openEditDialog(pinId) {
+          // ...existing code...
+          if (typeof _syncTajmerVis === "function") _syncTajmerVis(true);
+          // ...existing code...
+        }
     }
 
     // ── Dialog helpers ────────────────────────────────────────────────────────
@@ -448,6 +443,15 @@
       return mon;
     }
 
+    function getISOWeek(date) {
+      const target = new Date(date.valueOf());
+      const dayNr = (target.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const jan4 = new Date(target.getFullYear(), 0, 4);
+      const diff = (target - jan4) / 86400000;
+      return 1 + Math.round(diff / 7);
+    }
+
     function populateWeekSelect(selectFromDate) {
       if (!inputWeekSelect) return;
       const now = new Date();
@@ -455,26 +459,25 @@
       for (let w = -8; w <= 16; w++) {
         const d = new Date(now);
         d.setDate(now.getDate() + w * 7);
-        const day = d.getDay() || 7;
-        d.setDate(d.getDate() + 4 - day); // nearest Thursday → ISO year
+        const isoWeek = getISOWeek(d);
         const y = d.getFullYear();
-        const jan1 = new Date(y, 0, 1);
-        const wk = Math.ceil(((d - jan1) / 86400000 + 1) / 7);
-        const mon = isoWeekToMonday(y, wk);
+        const mon = isoWeekToMonday(y, isoWeek);
         const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
         const fmt = (dt) => dt.toISOString().slice(0, 10);
-        const value = `${y}-W${String(wk).padStart(2, "0")}`;
+        const value = `${y}-W${String(isoWeek).padStart(2, "0")}`;
         if (!options.find(o => o.value === value)) {
-          options.push({ value, label: `N${wk}  (${fmt(mon).slice(5)} – ${fmt(sun).slice(5)})`, from: fmt(mon), to: fmt(sun) });
+          options.push({ value, label: `N${isoWeek}  (${fmt(mon).slice(5)} – ${fmt(sun).slice(5)})`, from: fmt(mon), to: fmt(sun) });
         }
       }
       options.sort((a, b) => a.value.localeCompare(b.value));
       inputWeekSelect.innerHTML = options
         .map(o => `<option value="${o.value}" data-from="${o.from}" data-to="${o.to}">${o.label}</option>`)
         .join("");
-      const target = selectFromDate || weekBoundsStr().from;
-      const match = options.find(o => o.from === target) || options.find(o => o.from === weekBoundsStr().from);
+      // Ako je prosleđen datum, pokušaj da selektuješ nedelju koja pokriva taj datum
+      let target = selectFromDate || weekBoundsStr().from;
+      let match = options.find(o => o.from === target) || options.find(o => o.from === weekBoundsStr().from);
       if (match) inputWeekSelect.value = match.value;
+      else inputWeekSelect.value = "";
     }
 
     if (inputWeekSelect) {
@@ -485,21 +488,7 @@
       });
     }
 
-    async function openAddDialog(latlng) {
-      dialogMode    = "add";
-      editingPinId  = null;
-      pendingLatLng = latlng;
-      const wb = weekBoundsStr();
-      if (dlgTitle)   dlgTitle.textContent = "Novi pin";
-      if (inputLabel) inputLabel.value     = "";
-      if (inputNote)  inputNote.value      = "";
-      if (inputFrom)  inputFrom.value      = wb.from;
-      if (inputTo)    inputTo.value        = wb.to;
-      populateWeekSelect(wb.from);
-      if (btnDelete)  btnDelete.hidden     = true;
-      if (btnSave)    btnSave.textContent  = "Dodaj";
-
-      // Read defaults fresh from Firebase each time
+    async function reloadUserSettings() {
       let proxEnabled = true, alarmEnabled = true, proxKm = 3, alarmMin = 30;
       const db = getDb();
       if (db) {
@@ -514,14 +503,36 @@
           if (_s.alarmMin         != null) alarmMin     = _s.alarmMin;
         } catch (e) {}
       }
+      defaultProximityKm = proxKm;
+      defaultTajmerMin = alarmMin;
+      defaultProximityEnabled = proxEnabled;
+      defaultTajmerEnabled = alarmEnabled;
+      return { proxEnabled, alarmEnabled, proxKm, alarmMin };
+    }
+
+    async function openAddDialog(latlng) {
+      dialogMode    = "add";
+      editingPinId  = null;
+      pendingLatLng = latlng;
+      const wb = weekBoundsStr();
+      if (dlgTitle)   dlgTitle.textContent = "Novi pin";
+      if (inputLabel) inputLabel.value     = "";
+      if (inputNote)  inputNote.value      = "";
+      if (inputFrom)  inputFrom.value      = wb.from;
+      if (inputTo)    inputTo.value        = wb.to;
+      populateWeekSelect(wb.from); // uvek selektuje trenutnu nedelju
+      if (btnDelete)  btnDelete.hidden     = true;
+      if (btnSave)    btnSave.textContent  = "Dodaj";
+
+      // Always reload user settings before showing dialog
+      const { proxEnabled, alarmEnabled, proxKm, alarmMin } = await reloadUserSettings();
 
       if (inputUpozorenje)    inputUpozorenje.checked    = proxEnabled;
       if (inputUpozorjenjeKm) inputUpozorjenjeKm.value   = proxKm;
       if (inputTajmer)    inputTajmer.checked    = alarmEnabled;
-      if (inputTajmerMin) inputTajmerMin.value   = alarmMin;
+      if (inputTajmerMin) inputTajmerMin.value   = alarmEnabled ? alarmMin : "";
       if (inputAlarm)     inputAlarm.checked     = false;
-      setAlarmTime("");
-      _syncUpozorenjeVis(); _syncTajmerVis(); _syncAlarmVis();
+      _syncUpozorenjeVis(); _syncTajmerVis();
       selectedPinType = "utovar";
       selectedColor = "#6b7280";
       loadVehiclesForPicker(null);
@@ -529,9 +540,11 @@
       pinsDialog?.showModal();
     }
 
-    function openEditDialog(pinId) {
+    async function openEditDialog(pinId) {
       const entry = activePins.get(pinId);
       if (!entry || !pinsDialog) return;
+      // Always reload user settings before showing dialog
+      await reloadUserSettings();
       const d = entry.data;
       dialogMode    = "edit";
       editingPinId  = pinId;
@@ -541,16 +554,28 @@
       if (inputNote)  inputNote.value      = d.note        || "";
       if (inputFrom)  inputFrom.value      = d.visibleFrom || todayStr();
       if (inputTo)    inputTo.value        = d.visibleTo   || todayStr();
-      populateWeekSelect(d.visibleFrom || weekBoundsStr().from);
+      // Ako je period tačno jedna nedelja, selektuj nedelju, inače prazno
+      let weekFrom = d.visibleFrom;
+      let weekTo = d.visibleTo;
+      let weekLen = 0;
+      if (weekFrom && weekTo) {
+        const dtFrom = new Date(weekFrom);
+        const dtTo = new Date(weekTo);
+        weekLen = Math.round((dtTo - dtFrom) / 86400000) + 1;
+      }
+      if (weekFrom && weekTo && weekLen === 7) {
+        populateWeekSelect(weekFrom);
+      } else {
+        populateWeekSelect("");
+      }
       if (btnDelete)  btnDelete.hidden     = false;
       if (btnSave)    btnSave.textContent  = "Sačuvaj";
       if (inputUpozorenje)    inputUpozorenje.checked    = !!d.upozorenje;
       if (inputUpozorjenjeKm) inputUpozorjenjeKm.value   = d.upozorenjekm ?? defaultProximityKm;
       if (inputAlarm)     inputAlarm.checked     = !!d.alarm;
       if (inputTajmer)    inputTajmer.checked    = !!d.tajmer;
-      if (inputTajmerMin) inputTajmerMin.value   = d.tajmermin ?? defaultTajmerMin;
-      setAlarmTime(d.alarmtime || "");
-      _syncUpozorenjeVis(); _syncTajmerVis(); _syncAlarmVis();
+      if (inputTajmerMin) inputTajmerMin.value   = d.tajmer ? (d.tajmermin ?? defaultTajmerMin) : "";
+      _syncUpozorenjeVis(); _syncTajmerVis();
       selectedPinType = d.pinType || "utovar";
       selectedColor = d.color || "#6b7280";
       loadVehiclesForPicker(d.vehicleId || null);
@@ -850,7 +875,6 @@
         upozorenje:    !!(inputUpozorenje?.checked),
         upozorenjekm:  parseInt(inputUpozorjenjeKm?.value, 10) || defaultProximityKm,
         alarm:         !!(inputAlarm?.checked),
-        alarmtime:     getAlarmTime(),
         tajmer:        !!(inputTajmer?.checked),
         tajmermin:     parseInt(inputTajmerMin?.value, 10) || defaultTajmerMin
       };
@@ -864,9 +888,11 @@
 
           if (dialogMode === "add" && pendingLatLng) {
             const pinId   = generatePinId();
+            const nowIso = new Date().toISOString();
             const pinData = {
               id:         pinId,
-              createdAt:  new Date().toISOString(),
+              createdAt:  nowIso,
+              tajmerStart: form.tajmer ? nowIso : null,
               lat:        pendingLatLng.lat,
               lng:        pendingLatLng.lng,
               deletedAt:  null,
@@ -879,14 +905,30 @@
             closeDialog();
 
           } else if (dialogMode === "edit" && editingPinId) {
-            await fbPatch(editingPinId, form);
+            // If timer is being enabled now, or already enabled, set tajmerStart accordingly
             const entry = activePins.get(editingPinId);
+            let patch = { ...form };
             if (entry) {
+              const wasTajmer = !!entry.data.tajmer;
+              const nowTajmer = !!form.tajmer;
+              if (nowTajmer && !wasTajmer) {
+                // Timer is being enabled now, set tajmerStart
+                patch.tajmerStart = new Date().toISOString();
+                entry.data.tajmerStart = patch.tajmerStart;
+              } else if (nowTajmer && wasTajmer) {
+                // Timer remains enabled, keep previous tajmerStart
+                patch.tajmerStart = entry.data.tajmerStart || new Date().toISOString();
+              } else {
+                // Timer is disabled, clear tajmerStart
+                patch.tajmerStart = null;
+                entry.data.tajmerStart = null;
+              }
               Object.assign(entry.data, form);
               entry.marker.setIcon(createPinIcon(form.shape, form.color, form.vehicleLabel || ""));
               recomputeAllTooltips();
               refreshPinsList();
             }
+            await fbPatch(editingPinId, patch);
             closeDialog();
           }
         } catch (err) {
@@ -1073,6 +1115,31 @@
 
     // ── Pins list panel ───────────────────────────────────────────────────────
 
+    // Helper: set panel width to minimal needed for all data
+    async function setPinsListPanelToAutoWidth() {
+      const panel = document.getElementById("pins-list-panel");
+      const content = document.getElementById("pins-list-content");
+      let minWidth = 120;
+      if (panel && content) {
+        // Wait for layout
+        await new Promise(r => setTimeout(r, 0));
+        // Pronađi najdesniji .pli-note u svim redovima
+        let right = 0;
+        const notes = content.querySelectorAll(".pli-note");
+        notes.forEach(note => {
+          const rect = note.getBoundingClientRect();
+          if (rect.right > right) right = rect.right;
+        });
+        if (right > 0) {
+          const panelLeft = panel.getBoundingClientRect().left;
+          minWidth = Math.max(120, Math.ceil(right - panelLeft) - 25 + 8); // 8px padding, 25px prikrivanje
+        }
+        panel.style.width = minWidth + "px";
+        panel._userResized = true;
+      }
+      return minWidth;
+    }
+
     function refreshPinsList() {
       const panel   = document.getElementById("pins-list-panel");
       const content = document.getElementById("pins-list-content");
@@ -1090,8 +1157,15 @@
           handle.classList.add("dragging");
           e.preventDefault();
           function onMove(ev) {
-            panel.style.width = Math.max(120, startW + ev.clientX - startX) + "px";
+            const newWidth = Math.max(120, startW + ev.clientX - startX);
+            panel.style.width = newWidth + "px";
             panel._userResized = true;
+            // Save width to Firebase userSettings
+            const db = getDb();
+            const _uid = window.currentUid;
+            if (db && _uid) {
+              db.ref(`userSettings/${_uid}/pinsListWidth`).set(newWidth).catch(() => {});
+            }
           }
           function onUp() {
             handle.classList.remove("dragging");
@@ -1100,7 +1174,37 @@
           document.addEventListener("mousemove", onMove);
           document.addEventListener("mouseup", onUp, { once: true });
         });
+
+        // Double click resets width to default
+        handle.addEventListener("dblclick", async (e) => {
+          const minWidth = await setPinsListPanelToAutoWidth();
+          // Save this width to Firebase userSettings
+          const db = getDb();
+          const _uid = window.currentUid;
+          if (db && _uid) {
+            try { await db.ref(`userSettings/${_uid}/pinsListWidth`).set(minWidth); } catch (e) {}
+          }
+        });
       }
+    // On app start, load pins list width from Firebase userSettings
+    (async function loadPinsListWidth() {
+      const panel = document.getElementById("pins-list-panel");
+      const db = getDb && getDb();
+      const _uid = window.currentUid;
+      if (panel && db && _uid) {
+        try {
+          const snap = await db.ref(`userSettings/${_uid}/pinsListWidth`).once("value");
+          const w = snap.val();
+          if (w && !isNaN(w)) {
+            panel.style.width = w + "px";
+            panel._userResized = true;
+          } else {
+            // Nema podešene širine, koristi helper
+            await setPinsListPanelToAutoWidth();
+          }
+        } catch (e) {}
+      }
+    })();
 
       // Click delegation (once)
       if (!content._hoverInited) {
@@ -1117,19 +1221,26 @@
         const c = String(color || "#6b7280");
         const gid = `ml${Math.random().toString(36).slice(2, 6)}`;
         const lbl = String(label || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const txt = lbl ? `<text x="16" y="16" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="13" font-weight="bold" fill="#fff" stroke="#000" stroke-width="1.2" paint-order="stroke" pointer-events="none">${lbl}</text>` : "";
+        // Use mapped scale for pin list
+        const markerScale = window.markerSizeScale || 1;
+        const pinListScale = markerScaleToPinListScale(markerScale);
+        // Default SVG size is 32, scale accordingly
+        const baseSize = 30;
+        const svgSize = Math.round(baseSize * pinListScale);
+        const txtPx = Math.round(13 * pinListScale);
+        const txt = lbl ? `<text x="16" y="16" text-anchor="middle" dominant-baseline="central" font-family="sans-serif" font-size="${txtPx}" font-weight="bold" fill="#fff" stroke="#000" stroke-width="1.2" paint-order="stroke" pointer-events="none">${lbl}</text>` : "";
         const defs = `<defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="100%">`
           + `<stop offset="0%" stop-color="#fff" stop-opacity="0.52"/>`
           + `<stop offset="45%" stop-color="#fff" stop-opacity="0.08"/>`
           + `<stop offset="100%" stop-color="#000" stop-opacity="0.32"/>`
           + `</linearGradient></defs>`;
-        if (shape === "circle") return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">${defs}`
+        if (shape === "circle") return `<svg viewBox="0 0 32 32" width="${svgSize}" height="${svgSize}" aria-hidden="true">${defs}`
           + `<g class="pin-shape-layer"><circle cx="16" cy="16" r="12" fill="#000"/><circle cx="16" cy="16" r="11" fill="#fff"/><circle cx="16" cy="16" r="9" fill="#000"/></g>`
           + `<circle cx="16" cy="16" r="8" fill="${c}"/><circle cx="16" cy="16" r="8" fill="url(#${gid})"/>${txt}</svg>`;
-        if (shape === "diamond") return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">${defs}`
+        if (shape === "diamond") return `<svg viewBox="0 0 32 32" width="${svgSize}" height="${svgSize}" aria-hidden="true">${defs}`
           + `<g class="pin-shape-layer"><path d="M16 -1 L33 16 L16 33 L-1 16 Z" fill="#000"/><path d="M16 0.4 L31.6 16 L16 31.6 L0.4 16 Z" fill="#fff"/><path d="M16 3.3 L28.7 16 L16 28.7 L3.3 16 Z" fill="#000"/></g>`
           + `<path d="M16 4.7 L27.3 16 L16 27.3 L4.7 16 Z" fill="${c}"/><path d="M16 4.7 L27.3 16 L16 27.3 L4.7 16 Z" fill="url(#${gid})"/>${txt}</svg>`;
-        return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true">${defs}`
+        return `<svg viewBox="0 0 32 32" width="${svgSize}" height="${svgSize}" aria-hidden="true">${defs}`
           + `<g class="pin-shape-layer"><rect x="4" y="4" width="24" height="24" fill="#000"/><rect x="5" y="5" width="22" height="22" fill="#fff"/><rect x="7" y="7" width="18" height="18" fill="#000"/></g>`
           + `<rect x="8" y="8" width="16" height="16" fill="${c}"/><rect x="8" y="8" width="16" height="16" fill="url(#${gid})"/>${txt}</svg>`;
       }
@@ -1150,6 +1261,11 @@
         return;
       }
 
+      // Set pin list scale CSS variable
+      const markerScale = window.markerSizeScale || 1;
+      const pinListScale = markerScaleToPinListScale(markerScale);
+      panel.style.setProperty('--pinlist-scale', pinListScale);
+
       content.innerHTML = visible.map(e => {
         const d = e.data;
         const esc = s => String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
@@ -1163,8 +1279,8 @@
         const dates = from || to ? (from || "—") + " – " + (to || "—") : "";
         return `<div class="pins-list-item${e.tipHidden ? " pli-faded" : ""}" data-pin-id="${d.id}">`
           + `<span class="pli-icon">${miniPinSvg(shape, col, "")}</span>`
-          + `<span class="pli-label">${lbl}</span>`
           + `<span class="pli-vehicle">${veh}</span>`
+          + `<span class="pli-label">${lbl}</span>`
           + `<span class="pli-note">${note}</span>`
           + `<span class="pli-dates">${dates}</span>`
           + `<span class="pli-handle" title="Prevuci za promenu redosleda">⠿</span>`
@@ -1291,7 +1407,7 @@
       });
     }
 
-    return { loadPins, loadPinTypeShapes, refreshSettings: initSettingsSection, refreshAllPins, updateVehicleCache, setDateFilter: applyDateFilter, pulsePin, pulseStalePin, stopStalePin, getActivePins: () => activePins };
+    return { loadPins, loadPinTypeShapes, refreshSettings: initSettingsSection, refreshAllPins, refreshPinsList, updateVehicleCache, setDateFilter: applyDateFilter, pulsePin, pulseStalePin, stopStalePin, getActivePins: () => activePins };
   }
 
   global.initPins = initPins;

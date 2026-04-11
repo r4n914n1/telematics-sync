@@ -11,6 +11,7 @@ TYPE html>
     crossorigin=""
   >
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="date-range-display.css">
 </head>
 <body>
 
@@ -36,17 +37,14 @@ TYPE html>
   </div>
   <div class="left-controls" aria-label="Informacije o nedelji i datumima">
     <div class="date-segment">
-      <label class="seg-btn seg-week" id="week-btn">
-        <span class="btn-label">Nedelja</span>
-        <span class="btn-value" id="week-val"></span>
-        <select id="map-filter-week" class="btn-hidden-week"></select>
-      </label>
-      <button type="button" class="seg-btn" id="date-range-btn" style="min-width:120px">
-        <span class="btn-label">Raspon</span>
-        <span class="btn-value" id="date-range-val"></span>
+      <button type="button" class="date-range-display" id="date-range-btn">
+        <span id="date-range-btn-from"></span>
+        <span style="opacity:0.7;">–</span>
+        <span id="date-range-btn-to"></span>
       </button>
       <input type="date" id="map-filter-from" hidden>
       <input type="date" id="map-filter-to" hidden>
+      <!-- date-range-display uklonjen -->
     </div>
   </div>
 
@@ -107,7 +105,7 @@ TYPE html>
           <button type="button" class="settings-nav-btn" data-panel="markeri">Markeri</button>
           <button type="button" class="settings-nav-btn" data-panel="notifikacije">Notifikacije</button>
           <button type="button" class="settings-nav-btn" data-panel="telematika">Telematika</button>
-          <button type="button" class="settings-nav-btn" data-panel="placeholder1">Placeholder 1</button>
+          <button type="button" class="settings-nav-btn" data-panel="placeholder1">Vremenski raspon</button>
           <button type="button" class="settings-nav-btn" data-panel="placeholder2">Placeholder 2</button>
         </nav>
 
@@ -144,15 +142,24 @@ TYPE html>
           <!-- Notifikacije -->
           <div class="settings-panel" data-panel="notifikacije">
             <h3>Upozorenja o blizini</h3>
+            <div style="margin-bottom:14px;font-size:13px;color:var(--ink-soft);line-height:1.7;background:var(--bg-default);padding:14px 18px 10px 18px;border-radius:12px;box-shadow:0 2px 8px 0 #0001;">
+              Kada se vozila približe označenim tačkama na mapi, možete dobiti zvučno ili vizuelno upozorenje.<br>
+              <b>Udaljenost</b> određuje prag za aktivaciju upozorenja.<br>
+              Uključite ili isključite zvuk i/ili karticu po želji.<br>
+              <span style="display:block;margin-top:8px;font-size:12px;color:var(--ink-muted)"><b>Podrazumevano</b> znači da će ova opcija biti uključena za sve nove markere koje dodate, osim ako ručno ne promenite podešavanje za pojedinačni marker.</span>
+            </div>
             <div class="form-group">
               <label for="settings-proximity-km">Udaljenost (km)</label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" id="settings-proximity-km" class="form-input" min="1" max="100" step="1" value="3" placeholder="1–100" style="width:72px;flex-shrink:0">
-                <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;white-space:nowrap">
-                  <input type="checkbox" id="settings-proximity-enabled" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
-                  Podrazumevano
-                </label>
-                <div class="notif-toggle-group">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;margin-bottom:2px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <input type="number" id="settings-proximity-km" class="form-input" min="1" max="100" step="1" value="3" placeholder="1–100" style="width:72px;flex-shrink:0">
+                  <span style="font-size:13px;color:var(--ink-soft);">km</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <input type="checkbox" id="settings-proximity-enabled" checked style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+                  <span style="font-size:13px;color:var(--ink-soft);">Podrazumevano</span>
+                </div>
+                <div class="notif-toggle-group" style="display:flex;gap:8px;">
                   <button type="button" class="notif-toggle-btn active" id="prox-sound-btn" title="Zvuk upozorenja">
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M3 7.5h2.5L9 4v12l-3.5-3.5H3z"/>
@@ -177,15 +184,23 @@ TYPE html>
               </div>
             </div>
             <h3 style="margin-top:20px">Tajmer</h3>
+            <div style="margin-bottom:14px;font-size:13px;color:var(--ink-soft);line-height:1.7;background:var(--bg-default);padding:14px 18px 10px 18px;border-radius:12px;box-shadow:0 2px 8px 0 #0001;">
+              <b>Tajmer</b> omogućava da dobijete upozorenje nakon što vozilo provede određeno vreme na lokaciji.<br>
+              Možete uključiti zvuk i/ili karticu, kao i podesiti trajanje.<br>
+              <span style="display:block;margin-top:8px;font-size:12px;color:var(--ink-muted)"><b>Podrazumevano</b> znači da će ova opcija biti uključena za sve nove markere koje dodate, osim ako ručno ne promenite podešavanje za pojedinačni marker.</span>
+            </div>
             <div class="form-group">
               <label for="settings-alarm-min">Trajanje (minuta)</label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <input type="number" id="settings-alarm-min" class="form-input" min="1" max="540" step="1" value="30" placeholder="1–540" style="width:72px;flex-shrink:0">
-                <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;color:var(--ink-soft);cursor:pointer;white-space:nowrap">
-                  <input type="checkbox" id="settings-tajmer-enabled" checked style="accent-color:var(--accent);width:14px;height:14px;cursor:pointer">
-                  Podrazumevano
-                </label>
-                <div class="notif-toggle-group">
+              <div style="display:flex;flex-wrap:wrap;align-items:center;gap:14px 18px;margin-bottom:2px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <input type="number" id="settings-alarm-min" class="form-input" min="1" max="540" step="1" value="30" placeholder="1–540" style="width:72px;flex-shrink:0">
+                  <span style="font-size:13px;color:var(--ink-soft);">min</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:7px;">
+                  <input type="checkbox" id="settings-tajmer-enabled" checked style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+                  <span style="font-size:13px;color:var(--ink-soft);">Podrazumevano</span>
+                </div>
+                <div class="notif-toggle-group" style="display:flex;gap:8px;">
                   <button type="button" class="notif-toggle-btn active" id="tajmer-sound-btn" title="Zvuk tajmera">
                     <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M3 7.5h2.5L9 4v12l-3.5-3.5H3z"/>
@@ -210,6 +225,10 @@ TYPE html>
               </div>
             </div>
             <h3 style="margin-top:20px">Alarm</h3>
+            <div style="margin-bottom:14px;font-size:13px;color:var(--ink-soft);line-height:1.7;background:var(--bg-default);padding:14px 18px 10px 18px;border-radius:12px;box-shadow:0 2px 8px 0 #0001;">
+              <b>Alarm</b> vas obaveštava ako vozilo predugo stoji na istoj lokaciji bez promene statusa.<br>
+              Podesite broj minuta nakon kog se šalje upozorenje.
+            </div>
             <div class="form-group">
               <label for="settings-stale-min">Bez promene statusa (minuta)</label>
               <div style="display:flex;align-items:center;gap:8px">
@@ -252,8 +271,233 @@ TYPE html>
           </div>
 
           <!-- Placeholder 1 -->
-          <div class="settings-panel" data-panel="placeholder1">
-            <h3>Placeholder 1</h3>
+          <div class="settings-panel" data-panel="placeholder1" style="max-width:420px;padding-bottom:18px;">
+            <h3 style="margin-bottom:18px">Izbor prikaza</h3>
+            <div class="form-group" id="placeholder1-options" style="gap:18px;display:flex;flex-direction:column;background:var(--bg-elevated);padding:18px 18px 12px 18px;border-radius:12px;box-shadow:0 2px 8px 0 #0001;">
+              <div style="display:flex;align-items:center;gap:14px;">
+                <input type="radio" name="placeholder1-mode" value="week" id="ph1-week-radio" style="accent-color:var(--accent);width:20px;height:20px">
+                <label for="ph1-week-radio" style="font-size:16px;font-weight:500;cursor:pointer;margin-bottom:0;">Nedelja u godini</label>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;">
+                <input type="radio" name="placeholder1-mode" value="range" id="ph1-range-radio" style="accent-color:var(--accent);width:20px;height:20px">
+                <label for="ph1-range-radio" style="font-size:16px;font-weight:500;cursor:pointer;margin-bottom:0;">Vremenski raspon</label>
+                <span id="ph1-range-controls" style="display:flex;align-items:center;gap:10px;margin-left:18px;">
+                  <input type="number" id="ph1-prev-days" min="0" max="15" value="0" style="width:44px;padding:4px 6px;font-size:15px;border-radius:6px;border:1px solid var(--border-soft);background:var(--bg-default);" disabled>
+                  <span style="font-size:14px;opacity:0.8;">dana unazad</span>
+                  <input type="number" id="ph1-next-days" min="0" max="15" value="0" style="width:44px;padding:4px 6px;font-size:15px;border-radius:6px;border:1px solid var(--border-soft);background:var(--bg-default);" disabled>
+                  <span style="font-size:14px;opacity:0.8;">unapred</span>
+                </span>
+              </div>
+            </div>
+            <div style="margin-top:18px;font-size:13px;color:var(--ink-soft);line-height:1.6;background:var(--bg-default);padding:10px 16px;border-radius:8px;">
+              <b>Napomena:</b> Izabrani prikaz određuje kako se filtriraju podaci na mapi.<br>
+              <span style="opacity:0.8;">"Nedelja u godini" prikazuje podatke za celu tekuću nedelju.<br>"Vremenski raspon" omogućava prikaz za zadati broj dana unazad i unapred od danas.</span>
+            </div>
+            <script>
+            // Pamćenje i vraćanje filter moda i broja dana za raspon po korisniku
+            (function() {
+              const getDb = () => window.db;
+              const getUid = () => window.currentUid;
+              const prevInput = document.getElementById('ph1-prev-days');
+              const nextInput = document.getElementById('ph1-next-days');
+              const rangeRadio = document.getElementById('ph1-range-radio');
+              const rangeControls = document.getElementById('ph1-range-controls');
+              const mapFilterFrom = document.getElementById('map-filter-from');
+              const mapFilterTo = document.getElementById('map-filter-to');
+              const radios = document.querySelectorAll('input[name="placeholder1-mode"]');
+              // Disable controls initially
+              radios.forEach(radio => radio.disabled = true);
+              prevInput.disabled = true;
+              nextInput.disabled = true;
+              function getMondayAndSundayOfCurrentWeek() {
+                const now = new Date();
+                const day = now.getDay() || 7;
+                const monday = new Date(now);
+                monday.setDate(now.getDate() - day + 1);
+                const sunday = new Date(monday);
+                sunday.setDate(monday.getDate() + 6);
+                const fmt = d => d.toISOString().slice(0, 10);
+                return { from: fmt(monday), to: fmt(sunday) };
+              }
+              function setWeekFilter() {
+                const { from, to } = getMondayAndSundayOfCurrentWeek();
+                if (window.pinsApi && typeof window.pinsApi.setDateFilter === 'function') {
+                  window.pinsApi.setDateFilter(from, to);
+                }
+                if (mapFilterFrom) mapFilterFrom.value = from;
+                if (mapFilterTo) mapFilterTo.value = to;
+                if (typeof syncFilterButtons === 'function') syncFilterButtons();
+              }
+              function setRangeFilter(prev, next) {
+                prev = prev !== undefined ? prev : (parseInt(prevInput.value, 10) || 0);
+                next = next !== undefined ? next : (parseInt(nextInput.value, 10) || 0);
+                const today = new Date();
+                const from = new Date(today); from.setDate(today.getDate() - prev);
+                const to   = new Date(today); to.setDate(today.getDate() + next);
+                const fmt = d => d.toISOString().slice(0, 10);
+                if (window.pinsApi && typeof window.pinsApi.setDateFilter === 'function') {
+                  window.pinsApi.setDateFilter(fmt(from), fmt(to));
+                }
+                if (mapFilterFrom) mapFilterFrom.value = fmt(from);
+                if (mapFilterTo) mapFilterTo.value = fmt(to);
+                if (typeof syncFilterButtons === 'function') syncFilterButtons();
+              }
+              function clearFilter() {
+                if (window.pinsApi && typeof window.pinsApi.setDateFilter === 'function') {
+                  window.pinsApi.setDateFilter(null, null);
+                }
+                if (mapFilterFrom) mapFilterFrom.value = '';
+                if (mapFilterTo) mapFilterTo.value = '';
+              }
+              function setRadio(mode) {
+                const radios = document.querySelectorAll('input[name="placeholder1-mode"]');
+                radios.forEach(radio => {
+                  radio.checked = radio.value === mode;
+                });
+                // Enable/disable range controls
+                const enabled = mode === 'range';
+                prevInput.disabled = !enabled;
+                nextInput.disabled = !enabled;
+              }
+              function saveMode(mode) {
+                const db = getDb();
+                if (!db || !getUid()) {
+                  console.warn('[Placeholder1] saveMode: db or getUid() not ready', { db, uid: getUid(), mode });
+                  return;
+                }
+                db.ref(`userSettings/${getUid()}/pinsFilterMode`).set(mode)
+                  .then(() => {
+                    console.log('[Placeholder1] pinsFilterMode saved:', mode);
+                  })
+                  .catch((err) => {
+                    console.error('[Placeholder1] Error saving pinsFilterMode:', err.message, mode);
+                  });
+              }
+              function saveRangeDays(prev, next) {
+                const db = getDb();
+                if (!db || !getUid()) {
+                  console.warn('[Placeholder1] saveRangeDays: db or getUid() not ready', { db, uid: getUid(), prev, next });
+                  return;
+                }
+                db.ref(`userSettings/${getUid()}/pinsRangePrevDays`).set(prev)
+                  .then(() => {
+                    console.log('[Placeholder1] pinsRangePrevDays saved:', prev);
+                  })
+                  .catch((err) => {
+                    console.error('[Placeholder1] Error saving pinsRangePrevDays:', err.message, prev);
+                  });
+                db.ref(`userSettings/${getUid()}/pinsRangeNextDays`).set(next)
+                  .then(() => {
+                    console.log('[Placeholder1] pinsRangeNextDays saved:', next);
+                  })
+                  .catch((err) => {
+                    console.error('[Placeholder1] Error saving pinsRangeNextDays:', err.message, next);
+                  });
+              }
+              // On radio change
+              let saveDebounceTimer = null;
+              function saveAllSettings() {
+                const db = getDb();
+                if (!db || !getUid()) {
+                  console.warn('[Placeholder1] saveAllSettings: db or getUid() not ready, skipping save');
+                  return;
+                }
+                const mode = document.querySelector('input[name="placeholder1-mode"]:checked')?.value || 'week';
+                const prev = parseInt(prevInput.value, 10) || 0;
+                const next = parseInt(nextInput.value, 10) || 0;
+                saveMode(mode);
+                saveRangeDays(prev, next);
+              }
+              function debouncedSave() {
+                clearTimeout(saveDebounceTimer);
+                saveDebounceTimer = setTimeout(saveAllSettings, 300);
+              }
+              radios.forEach(radio => {
+                radio.addEventListener('change', function() {
+                  if (!this.checked) return;
+                  setRadio(this.value);
+                  if (this.value === 'week') setWeekFilter();
+                  else if (this.value === 'range') setRangeFilter();
+                  else clearFilter();
+                  debouncedSave();
+                });
+              });
+              [prevInput, nextInput].forEach(inp => {
+                inp.addEventListener('input', function() {
+                  if (rangeRadio.checked) setRangeFilter(parseInt(prevInput.value, 10) || 0, parseInt(nextInput.value, 10) || 0);
+                  debouncedSave();
+                });
+              });
+              // On load: čekaj da postoji window.currentUid, pa onda učitaj userSettings ili postavi default
+                          // --- Ensure Placeholder 1 settings are saved when main 'Sačuvaj' is pressed ---
+                          const settingsSaveBtn = document.getElementById('settings-save-btn');
+                          if (settingsSaveBtn) {
+                            settingsSaveBtn.addEventListener('click', () => {
+                              if (document.querySelector('.settings-panel[data-panel="placeholder1"]')) {
+                                // Save Placeholder 1 settings as well
+                                saveAllSettings();
+                                console.log('[Placeholder1] saveAllSettings called from main save button');
+                              }
+                            });
+                          }
+              function runOnAuthReady(fn) {
+                if (window.currentUid) { fn(); return; }
+                let tries = 0;
+                const maxTries = 100; // ~5s
+                const interval = setInterval(() => {
+                  if (window.currentUid) {
+                    clearInterval(interval);
+                    fn();
+                  } else if (++tries > maxTries) {
+                    clearInterval(interval);
+                    fn();
+                  }
+                }, 50);
+              }
+              window.addEventListener('DOMContentLoaded', function() {
+                runOnAuthReady(function() {
+                  function fallback() { setRadio('week'); setWeekFilter(); }
+                  const enableControls = () => {
+                    radios.forEach(radio => radio.disabled = false);
+                    // Only enable range controls if range is selected
+                    if (rangeRadio.checked) {
+                      prevInput.disabled = false;
+                      nextInput.disabled = false;
+                    }
+                  };
+                  const db = getDb();
+                  const uid = getUid();
+                  if (db && uid) {
+                    Promise.all([
+                      db.ref(`userSettings/${uid}/pinsFilterMode`).once('value'),
+                      db.ref(`userSettings/${uid}/pinsRangePrevDays`).once('value'),
+                      db.ref(`userSettings/${uid}/pinsRangeNextDays`).once('value')
+                    ]).then(([modeSnap, prevSnap, nextSnap]) => {
+                      const mode = modeSnap.val();
+                      const prev = typeof prevSnap.val() === 'number' ? prevSnap.val() : 0;
+                      const next = typeof nextSnap.val() === 'number' ? nextSnap.val() : 0;
+                      prevInput.value = prev;
+                      nextInput.value = next;
+                      if (mode === 'week' || mode === 'range') {
+                        setRadio(mode);
+                        if (mode === 'week') setWeekFilter();
+                        else setRangeFilter(prev, next);
+                      } else {
+                        fallback();
+                      }
+                      enableControls();
+                    }).catch(() => {
+                      fallback();
+                      enableControls();
+                    });
+                  } else {
+                    fallback();
+                    enableControls();
+                  }
+                });
+              });
+            })();
+            </script>
           </div>
 
           <!-- Placeholder 2 -->
@@ -292,10 +536,16 @@ TYPE html>
           <span class="drc-month-label" id="drc-month-label"></span>
           <button type="button" class="drc-nav" id="drc-next">&#8250;</button>
         </div>
-        <div class="drc-weekdays">
-          <span>Po</span><span>Ut</span><span>Sr</span><span>Če</span><span>Pe</span><span>Su</span><span>Ne</span>
+        <div style="display:flex;">
+          <div class="drc-weeknums" id="drc-weeknums" style="display:grid;grid-template-rows:repeat(6,1fr);align-items:center;margin-right:6px;text-align:center;font-size:11px;font-weight:700;color:var(--accent);gap:1px;"></div>
+          <div style="flex:1;">
+            <div class="drc-weekdays" style="display:grid;grid-template-columns:32px repeat(7,1fr);text-align:center;">
+              <span style="color:transparent">#</span>
+              <span>Pon</span><span>Uto</span><span>Sre</span><span>Čet</span><span>Pet</span><span>Sub</span><span>Ned</span>
+            </div>
+            <div class="drc-days" id="drc-days" style="display:grid;grid-template-columns:32px repeat(7,1fr);"></div>
+          </div>
         </div>
-        <div class="drc-days" id="drc-days"></div>
         <p class="drc-hint" id="drc-hint">Odaberite početni datum</p>
         <button type="button" id="date-range-apply" class="login-btn" style="margin-top:8px" disabled>Primeni</button>
       </div>
@@ -369,16 +619,7 @@ TYPE html>
                       <span style="font-size:11px;color:var(--ink-muted)">min</span>
                     </span>
                   </label>
-                  <div class="pins-check-row" style="flex:1;gap:6px;cursor:default" id="pins-alarm-row">
-                    <input type="checkbox" id="pins-check-alarm" style="cursor:pointer;flex-shrink:0">
-                    <label for="pins-check-alarm" style="cursor:pointer;user-select:none;margin:0">Alarm</label>
-                    <div id="pins-alarm-extras" style="display:inline-flex;align-items:center;gap:3px;margin-left:auto">
-                      <select class="alarm-sel" id="pins-alarm-hh"></select>
-                      <span class="alarm-colon">:</span>
-                      <select class="alarm-sel" id="pins-alarm-mm"></select>
-                      <button type="button" class="alarm-clear-btn" id="pins-alarm-clear" title="Obriši">✕</button>
-                    </div>
-                  </div>
+                  <!-- Alarm opcija uklonjena -->
                 </div>
               </div>
             </div>
@@ -421,9 +662,6 @@ TYPE html>
   <script src="search.js"></script>
   <script src="pins.js"></script>
   <script>
-    const weekBtn = document.getElementById("week-btn");
-    const dateRangeBtn = document.getElementById("date-range-btn");
-    let pinsApi;
     const centerMapBtn = document.getElementById("center-map-btn");
     const drawRouteBtn = document.getElementById("draw-route-btn");
     const routeDistanceIndicator = document.getElementById("route-distance-indicator");
@@ -696,63 +934,43 @@ TYPE html>
 
     // ── Map filter (top bar) ──────────────────────────────────────────────────
 
-    const mapFilterWeek = document.getElementById("map-filter-week");
     const mapFilterFrom = document.getElementById("map-filter-from");
     const mapFilterTo   = document.getElementById("map-filter-to");
-
-    function buildWeekOptions(selectFrom) {
-      const now = new Date();
-      const options = [];
-      for (let w = -8; w <= 16; w++) {
-        const d = new Date(now);
-        d.setDate(now.getDate() + w * 7);
-        const day = d.getDay() || 7;
-        d.setDate(d.getDate() + 4 - day);
-        const y = d.getFullYear();
-        const jan1 = new Date(y, 0, 1);
-        const wk = Math.ceil(((d - jan1) / 86400000 + 1) / 7);
-        const mon = isoWeekToMondayGlobal(y, wk);
-        const sun = sundayOfWeek(mon);
-        const value = `${y}-W${String(wk).padStart(2, "0")}`;
-        function fmtDMY(d) {
-          return String(d.getDate()).padStart(2,"0") + "." + String(d.getMonth()+1).padStart(2,"0") + "." + d.getFullYear();
-        }
-        if (!options.find(o => o.value === value)) {
-          options.push({ value, mon, sun, label: `${String(wk).padStart(2,"0")}\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0${fmtDMY(mon)}\u00a0\u00a0\u00a0\u2013\u00a0\u00a0\u00a0${fmtDMY(sun)}` });
-        }
-      }
-      options.sort((a, b) => a.value.localeCompare(b.value));
-      mapFilterWeek.innerHTML = options.map(o =>
-        `<option value="${o.value}" data-from="${toYMD(o.mon)}" data-to="${toYMD(o.sun)}">${o.label}</option>`
-      ).join("");
-      const sf = selectFrom || mapFilterFrom.value;
-      const match = options.find(o => toYMD(o.mon) === sf)
-        || options.find(o => toYMD(o.mon) <= sf && sf <= toYMD(o.sun));
-      if (match) mapFilterWeek.value = match.value;
-    }
 
     function syncFilterButtons() {
       const from = new Date(mapFilterFrom.value + "T00:00:00");
       const to   = new Date(mapFilterTo.value   + "T00:00:00");
-      const wkFrom = getIsoWeekNumber(from), wkTo = getIsoWeekNumber(to);
-      document.getElementById("week-val").textContent = (wkFrom === wkTo) ? wkFrom : "";
-      document.getElementById("date-range-val").textContent = formatDate(from) + " \u2013 " + formatDate(to);
+      // const wkFrom = getIsoWeekNumber(from), wkTo = getIsoWeekNumber(to);
+      // document.getElementById("week-val").textContent = (wkFrom === wkTo) ? wkFrom : ""; // uklonjeno
+      // Update Raspon button to match date-range-display style and format dd.mm.yyyy
+      const btnFrom = document.getElementById("date-range-btn-from");
+      const btnTo = document.getElementById("date-range-btn-to");
+      if (btnFrom && btnTo) {
+        btnFrom.textContent = formatDMY(mapFilterFrom.value);
+        btnTo.textContent = formatDMY(mapFilterTo.value);
+      }
+      // date-range-display uklonjen
+      function formatDMY(ymd) {
+        if (!ymd) return "";
+        const [y, m, d] = ymd.split("-");
+        return `${d}.${m}.${y}`;
+      }
       if (pinsApi) pinsApi.setDateFilter(mapFilterFrom.value, mapFilterTo.value);
     }
 
-    mapFilterWeek.addEventListener("pointerdown", () => {
-      buildWeekOptions(mapFilterFrom.value);
-    });
-
-    mapFilterWeek.addEventListener("change", () => {
-      const sel = mapFilterWeek.options[mapFilterWeek.selectedIndex];
-      mapFilterFrom.value = sel.dataset.from;
-      mapFilterTo.value   = sel.dataset.to;
-      syncFilterButtons();
-      _saveUserView();
-    });
+    // mapFilterWeek.addEventListener("pointerdown", () => {
+    //   buildWeekOptions(mapFilterFrom.value);
+    // });
+    // mapFilterWeek.addEventListener("change", () => {
+    //   const sel = mapFilterWeek.options[mapFilterWeek.selectedIndex];
+    //   mapFilterFrom.value = sel.dataset.from;
+    //   mapFilterTo.value   = sel.dataset.to;
+    //   syncFilterButtons();
+    //   _saveUserView();
+    // });
 
     (function () {
+      const dateRangeBtn = document.getElementById("date-range-btn");
       const MONTHS = ["Januar","Februar","Mart","April","Maj","Jun","Jul","Avgust","Septembar","Oktobar","Novembar","Decembar"];
       const dlg        = document.getElementById("date-range-dialog");
       const closeBtn   = document.getElementById("date-range-close");
@@ -771,13 +989,16 @@ TYPE html>
         return `${d}.${m}.${y}`;
       }
 
+
       function renderCal() {
         monthLabel.textContent = `${MONTHS[calMonth]} ${calYear}`;
-        const dow  = (new Date(calYear, calMonth, 1).getDay() + 6) % 7;
-        const dim  = new Date(calYear, calMonth + 1, 0).getDate();
-        const dipm = new Date(calYear, calMonth, 0).getDate();
-        const cells = 42;
-
+        // Prvi dan meseca
+        const firstDay = new Date(calYear, calMonth, 1);
+        // Koji je dan u nedelji (0=nedelja, 1=ponedeljak...)
+        let startDow = firstDay.getDay();
+        if (startDow === 0) startDow = 7; // 1=ponedeljak, 7=nedelja
+        // Prvi ponedeljak u prikazu
+        const firstMonday = new Date(calYear, calMonth, 1 - (startDow - 1));
         let dispFrom = pickFrom, dispTo = pickTo;
         if (pickStep === 1 && hoverDay) {
           dispFrom = pickFrom <= hoverDay ? pickFrom : hoverDay;
@@ -785,38 +1006,61 @@ TYPE html>
         }
 
         daysEl.innerHTML = "";
-        for (let i = 0; i < cells; i++) {
-          let ymd, num, other = false;
-          if (i < dow) {
-            num = dipm - dow + i + 1;
-            const pm = calMonth === 0 ? 11 : calMonth - 1;
-            const py = calMonth === 0 ? calYear - 1 : calYear;
-            ymd = toYMD(new Date(py, pm, num)); other = true;
-          } else if (i >= dow + dim) {
-            num = i - dow - dim + 1;
-            const nm = calMonth === 11 ? 0 : calMonth + 1;
-            const ny = calMonth === 11 ? calYear + 1 : calYear;
-            ymd = toYMD(new Date(ny, nm, num)); other = true;
-          } else {
-            num = i - dow + 1;
-            ymd = toYMD(new Date(calYear, calMonth, num));
+        // 6 redova po 8 kolona (nedelja + 7 dana)
+        for (let row = 0; row < 6; row++) {
+          const monday = new Date(firstMonday);
+          monday.setDate(firstMonday.getDate() + row * 7);
+          const mondayYMD = toYMD(monday);
+          // Dugme za nedelju (prva kolona)
+          const weekNum = getIsoWeekNumber(monday);
+          const wbtn = document.createElement("button");
+          wbtn.type = "button";
+          wbtn.className = "drc-weeknum";
+          wbtn.textContent = weekNum;
+          wbtn.dataset.monday = mondayYMD;
+          wbtn.title = `Odaberite celu nedelju (${mondayYMD})`;
+          if (pickFrom && pickTo) {
+            const mon = new Date(mondayYMD + "T00:00:00");
+            const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+            if (pickFrom === toYMD(mon) && pickTo === toYMD(sun)) {
+              wbtn.classList.add("drc-weeknum-selected");
+            }
           }
-
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "drc-day";
-          btn.dataset.ymd = ymd;
-          btn.textContent = num;
-          if (other) btn.classList.add("drc-other");
-          if (ymd === todayYMD) btn.classList.add("drc-today");
-          if (dispFrom && ymd === dispFrom) btn.classList.add("drc-start");
-          if (dispTo   && ymd === dispTo)   btn.classList.add("drc-end");
-          if (dispFrom && dispTo && ymd > dispFrom && ymd < dispTo) btn.classList.add("drc-range");
-          if (pickStep === 1 && pickFrom) {
-            const diff = Math.round((new Date(ymd + "T00:00:00") - new Date(pickFrom + "T00:00:00")) / 86400000);
-            if (Math.abs(diff) > 31) { btn.classList.add("drc-out-of-range"); btn.disabled = true; }
+          wbtn.addEventListener("click", function() {
+            const mon = new Date(mondayYMD + "T00:00:00");
+            const sun = new Date(mon);
+            sun.setDate(mon.getDate() + 6);
+            pickFrom = toYMD(mon);
+            pickTo = toYMD(sun);
+            pickStep = 2;
+            hintEl.textContent = `${fmtHint(pickFrom)} \u2013 ${fmtHint(pickTo)}`;
+            applyBtn.disabled = false;
+            renderCal();
+          });
+          daysEl.appendChild(wbtn);
+          // 7 dana u toj nedelji
+          for (let d = 0; d < 7; d++) {
+            const day = new Date(monday);
+            day.setDate(monday.getDate() + d);
+            const ymd = toYMD(day);
+            const num = day.getDate();
+            const isOtherMonth = day.getMonth() !== calMonth;
+            const btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "drc-day";
+            btn.dataset.ymd = ymd;
+            btn.textContent = num;
+            if (isOtherMonth) btn.classList.add("drc-other");
+            if (ymd === todayYMD) btn.classList.add("drc-today");
+            if (dispFrom && ymd === dispFrom) btn.classList.add("drc-start");
+            if (dispTo   && ymd === dispTo)   btn.classList.add("drc-end");
+            if (dispFrom && dispTo && ymd > dispFrom && ymd < dispTo) btn.classList.add("drc-range");
+            if (pickStep === 1 && pickFrom) {
+              const diff = Math.round((new Date(ymd + "T00:00:00") - new Date(pickFrom + "T00:00:00")) / 86400000);
+              if (Math.abs(diff) > 31) { btn.classList.add("drc-out-of-range"); btn.disabled = true; }
+            }
+            daysEl.appendChild(btn);
           }
-          daysEl.appendChild(btn);
         }
       }
 
@@ -869,7 +1113,7 @@ TYPE html>
           applyBtn.disabled = false;
         } else {
           pickFrom = null; pickTo = null; pickStep = 0;
-          hintEl.textContent = "Odaberite po\u010detni datum";
+          hintEl.textContent = "Odaberite početni datum";
           applyBtn.disabled = true;
         }
         const d = from ? new Date(from + "T00:00:00") : new Date();
@@ -898,9 +1142,8 @@ TYPE html>
     const _mon = new Date(today); _mon.setDate(today.getDate() - (_day - 1));
     const _sun = sundayOfWeek(_mon);
 
-    mapFilterFrom.value = toYMD(_mon);
-    mapFilterTo.value   = toYMD(_sun);
-    syncFilterButtons();  // pinsApi guard inside — safe before map init
+    // Inicijalni filter se postavlja prema korisničkim podešavanjima (Placeholder 1 skripta)
+    // Ove vrednosti se ne postavljaju ovde, već isključivo kroz Placeholder 1 logiku
 
     const map = L.map("map").setView([44.7866, 20.4489], 13);
     window._leafletMap = map;
@@ -919,14 +1162,17 @@ TYPE html>
     initLocationSearch(map);
     window.markerSizeScale = 1;
     pinsApi = window.pinsApi = initPins(map);
-    pinsApi.setDateFilter(mapFilterFrom.value, mapFilterTo.value);
+    // Ne postavljaj filter ovde — Placeholder 1 skripta će ga postaviti prema settings
 
     document.querySelectorAll('.marker-size-btn').forEach(btn => {
       btn.addEventListener('click', function () {
         document.querySelectorAll('.marker-size-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
         window.markerSizeScale = parseFloat(this.dataset.scale);
-        if (pinsApi) pinsApi.refreshAllPins();
+        if (pinsApi) {
+          pinsApi.refreshAllPins();
+          pinsApi.refreshPinsList();
+        }
         if (window.refreshAllVehicleIcons) window.refreshAllVehicleIcons();
       });
     });
@@ -950,7 +1196,10 @@ TYPE html>
           if (s.markerSize != null) {
             window.markerSizeScale = s.markerSize;
             document.querySelectorAll('.marker-size-btn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.scale) === s.markerSize));
-            if (pinsApi) pinsApi.refreshAllPins();
+            if (pinsApi) {
+              pinsApi.refreshAllPins();
+              pinsApi.refreshPinsList();
+            }
             if (window.refreshAllVehicleIcons) window.refreshAllVehicleIcons();
           }
           // Notif toggles
@@ -1533,7 +1782,8 @@ TYPE html>
       }).finally(() => cb());
     }
 
-    // Debounced save of map view + date filter to userSettings/{uid}/
+
+    // Debounced save of map view (without date filter) to userSettings/{uid}/
     let _saveViewTimer = null;
     function _saveUserView() {
       if (!window.db || !window.currentUid) return;
@@ -1541,8 +1791,7 @@ TYPE html>
       _saveViewTimer = setTimeout(() => {
         const c = map.getCenter();
         window.db.ref(`userSettings/${window.currentUid}/lastView`).set({
-          lat: c.lat, lng: c.lng, zoom: map.getZoom(),
-          dateFrom: mapFilterFrom.value, dateTo: mapFilterTo.value
+          lat: c.lat, lng: c.lng, zoom: map.getZoom()
         }).catch(() => {});
       }, 1000);
     }
@@ -1555,7 +1804,7 @@ TYPE html>
         pinsApi.loadPinTypeShapes();
         pinsApi.loadPins();
       }
-      // Restore last view (map position + date filter) then load toggles
+      // Restore last view (map position only) then load toggles
       const _uid = window.currentUid;
       const _restoreView = _uid
         ? window.db.ref(`userSettings/${_uid}/lastView`).once("value").then(snap => {
@@ -1565,12 +1814,6 @@ TYPE html>
               map.off("moveend zoomend", _saveUserView);
               map.setView([v.lat, v.lng], v.zoom, { animate: false });
               map.on("moveend zoomend", _saveUserView);
-            }
-            if (v.dateFrom && v.dateTo) {
-              mapFilterFrom.value = v.dateFrom;
-              mapFilterTo.value   = v.dateTo;
-              syncFilterButtons();
-              buildWeekOptions(v.dateFrom);
             }
             if (v.pinsListCollapsed === true && pinsListPanel && pinsListToggleBtn) {
               pinsListPanel.classList.add("pli-collapsed");
@@ -1592,7 +1835,17 @@ TYPE html>
         if (user && !_started) {
           _started = true;
           window.currentUid = user.uid;
-          _initUserSettings(() => _appStart());
+          // Prvo povuci markerSize, pa tek onda startuj app
+          const _sRef = db.ref(`userSettings/${user.uid}`);
+          _sRef.once("value").then(snap => {
+            const s = snap.val() || {};
+            window.markerSizeScale = typeof s.markerSize !== 'undefined' ? parseFloat(s.markerSize) : 1;
+            document.querySelectorAll('.marker-size-btn').forEach(b => {
+              b.classList.toggle('active', parseFloat(b.dataset.scale) === window.markerSizeScale);
+            });
+          }).finally(() => {
+            _initUserSettings(() => _appStart());
+          });
         }
       });
     } else {
