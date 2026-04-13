@@ -252,16 +252,20 @@ dialog, .notif-card {
   opacity: 1;
 }
 
+/* Pins list panel: scrollbar only when needed, on the left */
 .pins-list-panel {
   position: fixed;
   left: 12px;
-  top: calc(var(--topbar-h) + 80px);
+  top: calc(56px + 65px); /* 56px is default Leaflet zoom height, now 65px below */
+  bottom: auto;
   z-index: 999;
   min-width: 30px;
   max-width: 95vw;
-  max-height: calc(100vh - var(--topbar-h) - 24px);
+  max-height: calc(100vh - var(--topbar-h) - 22px - 56px - 35px); /* increased by 30px */
+  min-height: 32px; /* height of one row */
   overflow-y: auto;
   overflow-x: hidden;
+  direction: rtl; /* Move scrollbar to the left */
   background: rgba(255,255,255,0.52);
   backdrop-filter: blur(10px);
   border: 1px solid var(--border);
@@ -281,7 +285,9 @@ dialog, .notif-card {
 .pins-list-panel::-webkit-scrollbar { width: 4px; }
 .pins-list-panel::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 4px; }
 
+/* Reset text direction for content so text is not mirrored */
 .pins-list-content {
+  direction: ltr;
   display: grid;
   grid-template-columns: 30px max-content max-content max-content max-content 18px;
   column-gap: 8px;

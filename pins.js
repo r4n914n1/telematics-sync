@@ -79,19 +79,19 @@
       return pFrom <= t && pTo >= f;
     }
 
-    function applyDateFilter(from, to) {
+    function clearAllPins() {
+      // Remove all markers from the map and clear the activePins map
+      activePins.forEach(({ marker }) => {
+        if (pinsLayer.hasLayer(marker)) pinsLayer.removeLayer(marker);
+      });
+      activePins.clear();
+    }
+
+    async function applyDateFilter(from, to) {
       _filterFrom = from || null;
       _filterTo   = to   || null;
-      activePins.forEach(({ data, marker }) => {
-        const visible = isPinInRange(data);
-        if (visible) {
-          if (!pinsLayer.hasLayer(marker)) marker.addTo(pinsLayer);
-        } else {
-          if (pinsLayer.hasLayer(marker)) pinsLayer.removeLayer(marker);
-        }
-      });
-      recomputeAllTooltips();
-      refreshPinsList();
+      clearAllPins();
+      await loadPins(_filterFrom, _filterTo);
     }
 
     let dialogMode    = "add"; // "add" | "edit"
@@ -757,6 +757,8 @@
     // ── Marker rendering ──────────────────────────────────────────────────────
 
     function renderPinMarker(pinData) {
+      // Ako marker za ovaj pin već postoji, preskoči
+      if (activePins.has(pinData.id)) return;
       const marker = L.marker([pinData.lat, pinData.lng], {
         icon: createPinIcon(pinData.shape, pinData.color, pinData.vehicleLabel || ""),
         keyboard: false,
@@ -970,32 +972,48 @@
 
     // ── Load from Firebase ────────────────────────────────────────────────────
 
-    async function loadPins() {
+    /**
+     * Učitava pinove iz Firebase-a filtrirane po datumu (visibleFrom/visibleTo) i ograničava na 150.
+     * @param {string} from - Početni datum (YYYY-MM-DD)
+     * @param {string} to - Krajnji datum (YYYY-MM-DD)
+     */
+    async function loadPins(from, to) {
       const db = getDb();
       if (!db) {
         console.warn("[Pins] Firebase nije dostupan pri učitavanju pinova.");
         return;
       }
       try {
-        const snapshot = await db.ref("pins").once("value");
-        const all = snapshot.val() || {};
-        let count = 0;
-        Object.values(all).forEach((pin) => {
-          if (pin && !pin.deletedAt && pin.lat && pin.lng) {
-            renderPinMarker(pin);
-            count++;
-          }
+        // Prvo: po visibleFrom
+        let query = db.ref("pins").orderByChild("visibleFrom");
+        if (from) query = query.startAt(from);
+        if (to) query = query.endAt(to);
+        query = query.limitToFirst(150);
+        const snapshot = await query.once("value");
+        let pins = snapshot.val() || {};
+        // Drugo: dodatni filter po visibleTo (jer Firebase query može filtrirati samo po jednom polju)
+        pins = Object.values(pins).filter(pin => {
+          if (!pin || pin.deletedAt || !pin.lat || !pin.lng) return false;
+          // Pin je u opsegu ako mu se period preklapa sa filterom
+          const pFrom = pin.visibleFrom || "0000-00-00";
+          const pTo   = pin.visibleTo   || "9999-99-99";
+          const f = from || "0000-00-00";
+          const t = to   || "9999-99-99";
+          return pFrom <= t && pTo >= f;
         });
-        // Recheck directions now that all pins are placed
+        let count = 0;
+        pins.forEach((pin) => {
+          renderPinMarker(pin);
+          count++;
+        });
         recomputeAllTooltips();
         refreshPinsList();
-        console.log(`[Pins] Učitano ${count} aktivnih pinova.`);
+        console.log(`[Pins] Učitano ${count} filtriranih pinova.`);
       } catch (err) {
         console.error("[Pins] Greška pri učitavanju:", err.message);
       }
     }
     // ── Zoom resize listener ──────────────────────────────────────────────────
-
     let _lastPinTier = -1;
     map.on("zoomend", () => {
       const tier = getPinTier();
@@ -1008,9 +1026,26 @@
           _reapplyPulse(marker, data.id);
         });
       }
-      // Opcija 2: show/hide tooltips by zoom; opcija 1: recheck directions
       recomputeAllTooltips();
     });
+
+    // ── INIT: učitaj pinove na startu i na promenu filtera ───────────────
+    // Prvo učitavanje pinova
+    (async function initialLoad() {
+      await loadPins(_filterFrom, _filterTo);
+    })();
+
+    // Ako postoji UI za promenu filtera, zakači event da pozove applyDateFilter
+    if (inputFrom && inputTo) {
+      inputFrom.addEventListener("change", () => applyDateFilter(inputFrom.value, inputTo.value));
+      inputTo.addEventListener("change", () => applyDateFilter(inputFrom.value, inputTo.value));
+    }
+    if (inputWeekSelect) {
+      inputWeekSelect.addEventListener("change", () => {
+        const sel = inputWeekSelect.options[inputWeekSelect.selectedIndex];
+        applyDateFilter(sel.dataset.from, sel.dataset.to);
+      });
+    }
     // ── Public helpers for external refresh ──────────────────────────────────
 
     const _pulsingPins = new Set();        // pinIds currently pulsing
@@ -1213,7 +1248,7 @@
           const item = e.target.closest(".pins-list-item");
           if (!item) return;
           const entry = activePins.get(item.dataset.pinId);
-          if (entry) map.flyTo([entry.data.lat, entry.data.lng], Math.max(map.getZoom(), 14), { duration: 0.5 });
+          if (entry) map.flyTo([entry.data.lat, entry.data.lng], Math.max(map.getZoom(), 10), { duration: 0.5 });
         });
       }
 

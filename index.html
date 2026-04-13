@@ -1161,7 +1161,14 @@ TYPE html>
 
     initLocationSearch(map);
     window.markerSizeScale = 1;
-    pinsApi = window.pinsApi = initPins(map);
+    function tryInitPins() {
+      if (window.db) {
+        pinsApi = window.pinsApi = initPins(map);
+      } else {
+        setTimeout(tryInitPins, 100);
+      }
+    }
+    tryInitPins();
     // Ne postavljaj filter ovde — Placeholder 1 skripta će ga postaviti prema settings
 
     document.querySelectorAll('.marker-size-btn').forEach(btn => {
@@ -1802,7 +1809,7 @@ TYPE html>
       addVehicles(map);
       if (pinsApi) {
         pinsApi.loadPinTypeShapes();
-        pinsApi.loadPins();
+        // Uklonjeno direktno učitavanje pinova, filter logika već učitava pinove
       }
       // Restore last view (map position only) then load toggles
       const _uid = window.currentUid;
